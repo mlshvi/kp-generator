@@ -65,8 +65,9 @@ button:hover { background: #1d4ed8; }
 .doc-equip li { break-inside: avoid; margin-bottom: 3px; }
 
 .doc-photo { width: 45%; }
-.doc-photo-box { width: 100%; height: 180px; background: #f3f4f6; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.doc-photo-box img { width: 100%; height: 100%; object-fit: cover; }
+.doc-photo-box { width: 100%; height: 180px; background: transparent; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+/* ИСПРАВЛЕНИЕ: object-fit: contain; чтобы картинка не резалась */
+.doc-photo-box img { width: 100%; height: 100%; object-fit: contain; }
 .doc-photo-box span { font-size: 12px; color: #9ca3af; }
 
 .doc-price-box { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 10px; margin-bottom: 15px; page-break-inside: avoid; break-inside: avoid; }
@@ -340,7 +341,6 @@ const DEALER_SETTINGS = {
 // ==========================================
 // КАРТИНКИ АВТОМОБИЛЕЙ (СВЯЗЬ НАЗВАНИЯ И ФАЙЛА)
 // ==========================================
-// Мы удаляем пробелы и плюсы из названия, чтобы сопоставить с именем файла
 const AUTO_IMAGES = {
     "omodac5": "omodac5.webp",
     "omodac7": "omodac7.webp",
@@ -349,7 +349,7 @@ const AUTO_IMAGES = {
     "jaecooj8": "jaecooj8.webp",
     "belgees50": "belgees50.webp",
     "belgeex50": "belgeex50.webp", 
-    "belgeex50+": "belgeex50.webp", // Файл для X50+ у вас называется x50
+    "belgeex50+": "belgeex50.webp",
     "belgeex70": "belgeex70.webp"
 };
 

@@ -76,9 +76,6 @@ button:hover { background: #1d4ed8; }
 
 .doc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; line-height: 1.4; page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px;}
 
-.page-two { page-break-before: always; break-before: page; padding-top: 20px; border-top: 2px dashed #d1d5db; display: none; }
-.page-two h4 { font-size: 16px; margin-bottom: 15px; color: #1f2937; }
-
 /* === ТЕМЫ === */
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
 .theme-premium .doc-price-box { background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
@@ -139,7 +136,6 @@ body.mobile-view .doc-equip { column-count: 1; }
       width: 100%; 
       max-width: 100%; 
   }
-  .page-two { page-break-before: always; break-before: page; padding-top: 0; border: none; }
   .doc-price-box, .doc-footer, .doc-photo-box { page-break-inside: avoid; break-inside: avoid; }
 }
 
@@ -206,8 +202,8 @@ body.mobile-view .doc-equip { column-count: 1; }
 
     <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
     
-    <textarea id="vCarEq" placeholder="Дополнительное оборудование (на 1-ю страницу)" oninput="renderKP()"></textarea>
-    <textarea id="vCarStdEq" placeholder="Базовое оснащение (на 2-ю страницу, длинный список)" oninput="renderKP()"></textarea>
+    <textarea id="vCarEq" placeholder="Дополнительное оборудование (сигнализация, ковры...)" oninput="renderKP()"></textarea>
+    <textarea id="vCarStdEq" placeholder="Базовое оснащение (длинный список)" oninput="renderKP()"></textarea>
     
     <div class="row">
       <input id="vPriceOld" placeholder="Базовая цена" oninput="renderKP()">
@@ -288,6 +284,12 @@ body.mobile-view .doc-equip { column-count: 1; }
       </div>
     </div>
 
+    <!-- БЛОК БАЗОВОГО ОСНАЩЕНИЯ ТЕПЕРЬ НА ПЕРВОЙ СТРАНИЦЕ -->
+    <div id="stdEqBlock" style="margin-bottom: 15px; display: none;">
+      <div style="font-weight:bold; margin-bottom:5px; font-size: 13px;">Базовое оснащение:</div>
+      <ul class="doc-equip" id="outCarStdEq"></ul>
+    </div>
+
     <div class="doc-price-box">
       <div>
         <div style="font-size:12px; color:#6b7280; margin-bottom:2px;">Базовая цена</div>
@@ -312,10 +314,6 @@ body.mobile-view .doc-equip { column-count: 1; }
       </div>
     </div>
 
-    <div class="page-two" id="pageTwoBlock">
-        <h4>Базовое оснащение автомобиля:</h4>
-        <ul class="doc-equip" id="outCarStdEq"></ul>
-    </div>
   </div>
 </main>
 
@@ -383,8 +381,8 @@ const setVal = (id, v) => $(id).value = v || '';
 const formatRub = v => { let d = String(v).replace(/\D/g,''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g,'')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v4')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
-const saveDB = () => localStorage.setItem('kp_db_v4', JSON.stringify(db));
+let db = JSON.parse(localStorage.getItem('kp_db_v5')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
+const saveDB = () => localStorage.setItem('kp_db_v5', JSON.stringify(db));
 
 const selBrand = $('catBrand');
 const selModel = $('catModel');
@@ -464,12 +462,13 @@ function renderKP() {
   let eqList = val('vCarEq').split('\n').filter(Boolean);
   $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
 
+  // Вывод базового оснащения на первой странице
   let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
   if (stdEqList.length > 0) {
-      $('pageTwoBlock').style.display = 'block';
+      $('stdEqBlock').style.display = 'block';
       $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join('');
   } else {
-      $('pageTwoBlock').style.display = 'none';
+      $('stdEqBlock').style.display = 'none';
   }
 
   let pOld = val('vPriceOld'), pNew = val('vPriceNew');
@@ -531,11 +530,6 @@ function loadItem(type, idx) {
 
 function delItem(type, idx) {
   if(confirm('Удалить?')) { db[type].splice(idx, 1); saveDB(); renderLists(); }
-}
-
-function renderLists() {
-  $('list-mgrs').innerHTML = db.mgrs.map((m,i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
-  $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
 function downloadImage() {

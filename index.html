@@ -65,7 +65,6 @@ button:hover { background: #1d4ed8; }
 .doc-equip li { break-inside: avoid; margin-bottom: 3px; }
 
 .doc-photo { width: 45%; display: flex; justify-content: flex-end; align-items: flex-start;}
-/* ИСПРАВЛЕНИЕ: Убрали жесткую высоту, теперь фото сохраняет свои пропорции и не режется */
 .doc-photo-box { width: 100%; background: transparent; display: flex; justify-content: flex-end; }
 .doc-photo-box img { max-width: 100%; height: auto; max-height: 220px; border-radius: 8px; object-fit: contain; }
 .doc-photo-box span { font-size: 12px; color: #9ca3af; padding: 20px; background: #f3f4f6; border-radius: 8px; width: 100%; text-align: center;}
@@ -352,7 +351,6 @@ const AUTO_IMAGES = {
     "jaecooj8": "jaecooj8.webp",
     "belgees50": "belgees50.webp",
     "belgeex50": "belgeex50.webp", 
-    "belgeex50+": "belgeex50.webp",
     "belgeex70": "belgeex70.webp"
 };
 
@@ -386,9 +384,25 @@ const CATALOG = {
     "J8": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } }
   },
   "Belgee": {
-    "S50": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } },
-    "X50+": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } },
-    "X70": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } }
+    "S50": { 
+        "Актив (Механика)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Актив (Автомат)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Стайл": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Престиж": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" }
+    },
+    "X50": { 
+        "Актив": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Стайл": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Престиж": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Оникс": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" }
+    },
+    "X70": { 
+        "Актив": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Стайл (2WD)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Стайл (4WD)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Престиж": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" },
+        "Престиж+": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" }
+    }
   }
 };
 // ==========================================
@@ -399,8 +413,8 @@ const setVal = (id, v) => $(id).value = v || '';
 const formatRub = v => { let d = String(v).replace(/\D/g,''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g,'')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v7')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
-const saveDB = () => localStorage.setItem('kp_db_v7', JSON.stringify(db));
+let db = JSON.parse(localStorage.getItem('kp_db_v8')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
+const saveDB = () => localStorage.setItem('kp_db_v8', JSON.stringify(db));
 
 const selBrand = $('catBrand');
 const selModel = $('catModel');

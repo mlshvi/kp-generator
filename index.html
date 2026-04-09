@@ -209,7 +209,7 @@ body.mobile-view .doc-equip { column-count: 1; }
       <input id="vPriceOld" placeholder="Базовая цена" oninput="renderKP()">
       <input id="vPriceNew" placeholder="Цена со скидкой" oninput="renderKP()">
     </div>
-    <span class="hint">Загрузить свое фото авто:</span>
+    <span class="hint">Загрузить свое фото авто (перекроет стандартное):</span>
     <input type="file" id="vCarImg" accept="image/*" class="hint">
 
     <h3>Менеджер</h3>
@@ -284,7 +284,6 @@ body.mobile-view .doc-equip { column-count: 1; }
       </div>
     </div>
 
-    <!-- БЛОК БАЗОВОГО ОСНАЩЕНИЯ ТЕПЕРЬ НА ПЕРВОЙ СТРАНИЦЕ -->
     <div id="stdEqBlock" style="margin-bottom: 15px; display: none;">
       <div style="font-weight:bold; margin-bottom:5px; font-size: 13px;">Базовое оснащение:</div>
       <ul class="doc-equip" id="outCarStdEq"></ul>
@@ -339,6 +338,22 @@ const DEALER_SETTINGS = {
 };
 
 // ==========================================
+// КАРТИНКИ АВТОМОБИЛЕЙ (СВЯЗЬ НАЗВАНИЯ И ФАЙЛА)
+// ==========================================
+// Мы удаляем пробелы и плюсы из названия, чтобы сопоставить с именем файла
+const AUTO_IMAGES = {
+    "omodac5": "omodac5.webp",
+    "omodac7": "omodac7.webp",
+    "jaecooj6": "jaecooj6.webp",
+    "jaecooj7": "jaecooj7.webp", 
+    "jaecooj8": "jaecooj8.webp",
+    "belgees50": "belgees50.webp",
+    "belgeex50": "belgeex50.webp", 
+    "belgeex50+": "belgeex50.webp", // Файл для X50+ у вас называется x50
+    "belgeex70": "belgeex70.webp"
+};
+
+// ==========================================
 // БАЗА ДАННЫХ АВТОМОБИЛЕЙ
 // ==========================================
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -363,14 +378,14 @@ const CATALOG = {
     }
   },
   "Jaecoo": {
-    "J7": {
-      "Lifestyle 1.6T 2WD": { specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Передний", eq: "Бронепленка (капот, бампер)", stdEq: "Светодиодная оптика\nПанорамная крыша", priceOld: "3 339 900", priceNew: "2 899 900" }
-    }
+    "J6": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } },
+    "J7": { "Lifestyle 1.6T 2WD": { specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Передний", eq: "Бронепленка (капот, бампер)", stdEq: "Светодиодная оптика\nПанорамная крыша", priceOld: "3 339 900", priceNew: "2 899 900" } },
+    "J8": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } }
   },
   "Belgee": {
-    "X50": {
-      "Active 1.5T 7DCT": { specs: "Двигатель: 1.5 Турбо (150 л.с.)\nКПП: Робот 7DCT\nПривод: Передний", eq: "Защитная сетка радиатора", stdEq: "Галогеновые фары\nКондиционер", priceOld: "2 290 990", priceNew: "2 140 990" }
-    }
+    "S50": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } },
+    "X50+": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } },
+    "X70": { "Базовая (ввод вручную)": { specs: "", eq: "", stdEq: "", priceOld: "", priceNew: "" } }
   }
 };
 // ==========================================
@@ -381,8 +396,8 @@ const setVal = (id, v) => $(id).value = v || '';
 const formatRub = v => { let d = String(v).replace(/\D/g,''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g,'')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v5')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
-const saveDB = () => localStorage.setItem('kp_db_v5', JSON.stringify(db));
+let db = JSON.parse(localStorage.getItem('kp_db_v6')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
+const saveDB = () => localStorage.setItem('kp_db_v6', JSON.stringify(db));
 
 const selBrand = $('catBrand');
 const selModel = $('catModel');
@@ -422,6 +437,8 @@ function applyCatalog() {
   setVal('vCarStdEq', data.stdEq);
   setVal('vPriceOld', data.priceOld);
   setVal('vPriceNew', data.priceNew);
+  
+  // Сбрасываем ручную картинку, чтобы подтянулась автоматическая
   db.imgCar = ''; $('vCarImg').value = '';
   renderKP();
 }
@@ -462,7 +479,6 @@ function renderKP() {
   let eqList = val('vCarEq').split('\n').filter(Boolean);
   $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
 
-  // Вывод базового оснащения на первой странице
   let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
   if (stdEqList.length > 0) {
       $('stdEqBlock').style.display = 'block';
@@ -482,7 +498,18 @@ function renderKP() {
   $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон';
   $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
 
-  $('outCarImg').innerHTML = db.imgCar ? `<img src="${db.imgCar}">` : '<span>Фото авто</span>';
+  // Логика вывода фото: ручная загрузка -> авто-подгрузка -> заглушка
+  let carKey = val('vCarName').toLowerCase().replace(/\s+/g, '');
+  
+  if (db.imgCar) {
+      // Пользователь загрузил свою
+      $('outCarImg').innerHTML = `<img src="${db.imgCar}">`;
+  } else if (carKey && AUTO_IMAGES[carKey]) {
+      // Подтягиваем с GitHub
+      $('outCarImg').innerHTML = `<img src="${AUTO_IMAGES[carKey]}">`;
+  } else {
+      $('outCarImg').innerHTML = '<span>Фото авто</span>';
+  }
 }
 
 function autoNumDate() {

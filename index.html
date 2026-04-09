@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Подключаем легкую библиотеку только для создания картинок -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
 /* ========================================= */
-/* БАЗОВЫЕ СТИЛИ (ОТРИСОВКА А4)              */
+/* БАЗОВЫЕ СТИЛИ                             */
 /* ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
 body { background: #f3f4f6; color: #1f2937; padding: 20px; display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; transition: all 0.2s; }
@@ -42,7 +43,7 @@ button:hover { background: #1d4ed8; }
 
 .preview-wrap { display: flex; flex-direction: column; gap: 15px; }
 .toolbar { display: flex; gap: 10px; background: #fff; padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.toolbar button { margin: 0; width: auto; padding: 10px 20px; font-size: 14px;}
+.toolbar button { margin: 0; width: auto; padding: 10px 20px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1;}
 
 #document-container { width: 210mm; min-height: 297mm; background: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 12mm 15mm; margin: 0 auto; transition: all 0.3s; display: flex; flex-direction: column;}
 
@@ -80,7 +81,7 @@ button:hover { background: #1d4ed8; }
 
 /* === ТЕМЫ === */
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
-.theme-premium .doc-price-box { background: background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
+.theme-premium .doc-price-box { background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
 .theme-premium .doc-price-new { color: #059669; }
 .theme-premium .doc-discount { background: #dcfce7; color: #166534; }
 
@@ -106,15 +107,15 @@ button:hover { background: #1d4ed8; }
 .theme-catalog .doc-discount { background: #dbeafe; color: #1d4ed8; }
 
 /* ========================================= */
-/* МОБИЛЬНАЯ ВЕРСИЯ (РАБОТАЕТ ЧЕРЕЗ КЛАСС)   */
+/* МОБИЛЬНЫЙ ВИД                             */
 /* ========================================= */
 body.mobile-view { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
 body.mobile-view .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
 body.mobile-view .row { grid-template-columns: 1fr; }
-body.mobile-view .toolbar { justify-content: center; position: sticky; top: 0; z-index: 100; padding: 15px;}
+body.mobile-view .toolbar { flex-direction: column; position: sticky; top: 0; z-index: 100; padding: 15px;}
 body.mobile-view .toolbar button { width: 100%; text-align: center; margin: 0;}
 
-body.mobile-view #document-container { width: 100% !important; padding: 15px; min-height: auto; }
+body.mobile-view #document-container { width: 100%; padding: 15px; min-height: auto; }
 body.mobile-view .doc-header { flex-direction: column; gap: 15px; }
 body.mobile-view .doc-meta { text-align: left; }
 body.mobile-view .doc-main { flex-direction: column; }
@@ -125,13 +126,26 @@ body.mobile-view .doc-discount { align-self: flex-start; }
 body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
 body.mobile-view .doc-equip { column-count: 1; }
 
-/* Правила для системной печати */
+/* ========================================= */
+/* ИДЕАЛЬНЫЕ НАСТРОЙКИ ДЛЯ ПЕЧАТИ / PDF      */
+/* ========================================= */
 @media print {
-  body { background: #fff; padding: 0; display: block; }
-  .panel, .toolbar { display: none !important; }
-  #document-container { box-shadow: none; padding: 0; width: 100%; height: auto; margin: 0; border: none; }
-  .page-two { border-top: none; padding-top: 0; }
+  body { display: block; background: #fff; padding: 0; margin: 0; }
+  .panel, .toolbar, .telegram-warning { display: none !important; }
+  #document-container { 
+      box-shadow: none; 
+      margin: 0; 
+      padding: 0; 
+      width: 100%; 
+      max-width: 100%; 
+  }
+  .page-two { page-break-before: always; break-before: page; padding-top: 0; border: none; }
+  
+  /* Защита от разрывов элементов */
+  .doc-price-box, .doc-footer, .doc-photo-box { page-break-inside: avoid; break-inside: avoid; }
 }
+
+.telegram-warning { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border: 1px solid #fca5a5; text-align: center; }
 </style>
 </head>
 <body>
@@ -139,6 +153,10 @@ body.mobile-view .doc-equip { column-count: 1; }
 <aside class="panel">
   <h2>Генератор КП — Максимум</h2>
   
+  <div class="telegram-warning" id="tgWarning">
+    ⚠️ <b>Вы открыли сайт внутри мессенджера!</b><br>Для правильного скачивания нажмите на компас (в правом нижнем углу) или три точки сверху, чтобы открыть сайт в Safari или Chrome.
+  </div>
+
   <div class="tabs">
     <div class="tab active" onclick="switchTab('tab-data', this)">Данные КП</div>
     <div class="tab" onclick="switchTab('tab-mgrs', this)">Менеджеры</div>
@@ -158,7 +176,6 @@ body.mobile-view .doc-equip { column-count: 1; }
       <select id="catTrim" onchange="applyCatalog()" disabled>
         <option value="">-- Выберите комплектацию --</option>
       </select>
-      <span class="hint" style="color: #3b82f6;">Данные ниже заполнятся автоматически</span>
     </div>
 
     <h3>Дизайн КП</h3>
@@ -227,7 +244,10 @@ body.mobile-view .doc-equip { column-count: 1; }
 
 <main class="preview-wrap">
   <div class="toolbar">
-    <button id="btn-download" onclick="generateRealPDF()" class="btn-green">Скачать файл PDF</button>
+    <!-- КНОПКА 1: ИДЕАЛЬНЫЙ СТАНДАРТНЫЙ PDF -->
+    <button onclick="window.print()" class="btn-green">🖨️ Идеальный PDF / Печать</button>
+    <!-- КНОПКА 2: КАРТИНКА ДЛЯ WHATSAPP -->
+    <button id="btn-img" onclick="downloadImage()" style="background: #8b5cf6;">🖼️ Скачать картинкой (для WhatsApp)</button>
   </div>
 
   <div id="document-container" class="theme-premium">
@@ -298,7 +318,7 @@ body.mobile-view .doc-equip { column-count: 1; }
 </main>
 
 <script>
-// --- ПРОВЕРКА ЭКРАНА И ВКЛЮЧЕНИЕ МОБИЛЬНОЙ ВЕРСИИ ---
+// --- ПРОВЕРКА ЭКРАНА И МЕССЕНДЖЕРОВ ---
 function checkMobile() {
   if (window.innerWidth <= 900) {
     document.body.classList.add('mobile-view');
@@ -307,7 +327,12 @@ function checkMobile() {
   }
 }
 window.addEventListener('resize', checkMobile);
-checkMobile(); // Запускаем при открытии
+checkMobile();
+
+// Предупреждаем, если открыли внутри Telegram или ВКонтакте
+const isWebview = navigator.userAgent.includes('Instagram') || navigator.userAgent.includes('FBAV') || navigator.userAgent.includes('VK') || navigator.userAgent.includes('Telegram');
+if (isWebview) { document.getElementById('tgWarning').style.display = 'block'; }
+
 
 const DEALER_SETTINGS = {
   logo: "logo.jpg.jpg", 
@@ -527,60 +552,39 @@ function renderLists() {
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
-// === УЛУЧШЕННАЯ ГЕНЕРАЦИЯ PDF (РАБОТАЕТ НА ВСЕХ УСТРОЙСТВАХ) ===
-function generateRealPDF() {
-  const btn = $('btn-download');
+// === НОВАЯ ФУНКЦИЯ: СКАЧАТЬ КАК КАРТИНКУ ===
+function downloadImage() {
+  const btn = $('btn-img');
   const originalText = btn.textContent;
-  btn.textContent = '⏳ Формируем PDF...';
-  btn.style.background = '#6b7280';
+  btn.textContent = '⏳ Делаем фото...';
   btn.disabled = true;
 
-  // 1. Узнаем, была ли включена мобильная версия
+  // Временно заставляем документ стать широким для красивого снимка
   const wasMobile = document.body.classList.contains('mobile-view');
-  
-  // 2. Отключаем мобильную версию и жестко задаем ширину А4 для фотографа
   document.body.classList.remove('mobile-view');
+  
   const element = $('document-container');
-  element.style.width = '794px'; 
-  element.style.minWidth = '794px';
-  element.style.maxWidth = '794px';
+  element.style.width = '800px';
 
-  let fileName = 'Коммерческое_предложение.pdf';
-  if (val('vCarName')) {
-    fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.pdf`;
-  }
-
-  const opt = {
-    margin:       0,
-    filename:     fileName,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-
-  // 3. Ждем треть секунды, чтобы телефон успел перестроить страницу перед снимком
   setTimeout(() => {
-    html2pdf().set(opt).from(element).save().then(() => {
-      // 4. Возвращаем всё как было
+    html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+      // Возвращаем все назад
       if (wasMobile) document.body.classList.add('mobile-view');
       element.style.width = '';
-      element.style.minWidth = '';
-      element.style.maxWidth = '';
+      
+      let fileName = 'КП_Автосалон.jpg';
+      if (val('vCarName')) fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.jpg`;
+
+      // Скачиваем картинку
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = canvas.toDataURL('image/jpeg', 0.9);
+      link.click();
       
       btn.textContent = originalText;
-      btn.style.background = '#10b981';
-      btn.disabled = false;
-    }).catch((err) => {
-      alert('Ошибка при сохранении. Попробуйте открыть сайт в Safari или Chrome.');
-      if (wasMobile) document.body.classList.add('mobile-view');
-      element.style.width = '';
-      element.style.minWidth = '';
-      element.style.maxWidth = '';
-      btn.textContent = originalText;
-      btn.style.background = '#10b981';
       btn.disabled = false;
     });
-  }, 300); // пауза 300 миллисекунд
+  }, 200);
 }
 
 renderLists();

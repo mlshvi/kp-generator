@@ -140,8 +140,6 @@ body.mobile-view .doc-equip { column-count: 1; }
       max-width: 100%; 
   }
   .page-two { page-break-before: always; break-before: page; padding-top: 0; border: none; }
-  
-  /* Защита от разрывов элементов */
   .doc-price-box, .doc-footer, .doc-photo-box { page-break-inside: avoid; break-inside: avoid; }
 }
 
@@ -200,6 +198,12 @@ body.mobile-view .doc-equip { column-count: 1; }
     <h3>Автомобиль</h3>
     <input id="vCarName" placeholder="Марка и Модель" oninput="renderKP()">
     <input id="vCarPkg" placeholder="Комплектация" oninput="renderKP()">
+    
+    <div class="row">
+      <input id="vCarVIN" placeholder="VIN-номер (если есть)" oninput="renderKP()">
+      <input id="vCarColor" placeholder="Цвет кузова" oninput="renderKP()">
+    </div>
+
     <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
     
     <textarea id="vCarEq" placeholder="Дополнительное оборудование (на 1-ю страницу)" oninput="renderKP()"></textarea>
@@ -244,9 +248,7 @@ body.mobile-view .doc-equip { column-count: 1; }
 
 <main class="preview-wrap">
   <div class="toolbar">
-    <!-- КНОПКА 1: ИДЕАЛЬНЫЙ СТАНДАРТНЫЙ PDF -->
     <button onclick="window.print()" class="btn-green">🖨️ Идеальный PDF / Печать</button>
-    <!-- КНОПКА 2: КАРТИНКА ДЛЯ WHATSAPP -->
     <button id="btn-img" onclick="downloadImage()" style="background: #8b5cf6;">🖼️ Скачать картинкой (для WhatsApp)</button>
   </div>
 
@@ -318,7 +320,6 @@ body.mobile-view .doc-equip { column-count: 1; }
 </main>
 
 <script>
-// --- ПРОВЕРКА ЭКРАНА И МЕССЕНДЖЕРОВ ---
 function checkMobile() {
   if (window.innerWidth <= 900) {
     document.body.classList.add('mobile-view');
@@ -329,10 +330,8 @@ function checkMobile() {
 window.addEventListener('resize', checkMobile);
 checkMobile();
 
-// Предупреждаем, если открыли внутри Telegram или ВКонтакте
 const isWebview = navigator.userAgent.includes('Instagram') || navigator.userAgent.includes('FBAV') || navigator.userAgent.includes('VK') || navigator.userAgent.includes('Telegram');
 if (isWebview) { document.getElementById('tgWarning').style.display = 'block'; }
-
 
 const DEALER_SETTINGS = {
   logo: "logo.jpg.jpg", 
@@ -341,64 +340,42 @@ const DEALER_SETTINGS = {
   phone: "+7 (812) 416-96-95"
 };
 
+// ==========================================
+// БАЗА ДАННЫХ АВТОМОБИЛЕЙ
+// ==========================================
+const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
+const OMODA_C5_ACTIVE_EQ = "Алюминиевые литые диски 17\"\nСветодиодная оптика (LED фары, ДХО, задние фонари)\nЗадний спортивный спойлер\nЭлектрозеркала с обогревом и поворотниками\nДистанционный запуск и прогрев салона\nБесключевой доступ и кнопка запуска\nЭлектронный ручник с AutoHold\nКамера заднего вида и задние парктроники\nКруиз-контроль\nКондиционер (с дефлекторами для 2-го ряда)\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла и форсунок\nКомбинированный салон (ткань + искусственная кожа)\nМультируль (регулировка в 4-х направлениях)\nМеханическая регулировка передних сидений";
+
+const OMODA_C7_FWD_SPECS = "Двигатель: 1.6 Турбо (150 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 10.4 сек\nРасход (смешанный): 7.5 л / 100 км (АИ-92)\nДорожный просвет: 182 мм\nОбъем багажника: 639 л\nОбъем бака: 51 л";
+const OMODA_C7_AWD_SPECS = "Двигатель: 1.6 Турбо (150 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Полный\nРазгон 0-100 км/ч: 11.4 сек\nРасход (смешанный): 8.0 л / 100 км (АИ-92)\nДорожный просвет: 175 мм\nОбъем багажника: 639 л\nОбъем бака: 57 л";
+
 const CATALOG = {
   "Omoda": {
     "C5": {
-      "Joy 1.5T CVT": { 
-        specs: "Двигатель: 1.5 Турбо (147 л.с.)\nКПП: Вариатор CVT9\nПривод: Передний\nГод: 2024", 
-        eq: "Коврики салона\nЗащита картера\nЗимняя резина", 
-        stdEq: "Круиз-контроль\nКамера заднего вида\nПодогрев передних сидений\nЛитые диски 18\"\nБесключевой доступ\nКлимат-контроль 2 зоны", 
-        priceOld: "2 679 900", priceNew: "2 279 900" 
-      },
-      "Lifestyle 1.5T CVT": { 
-        specs: "Двигатель: 1.5 Турбо (147 л.с.)\nКПП: Вариатор CVT9\nПривод: Передний\nГод: 2024", 
-        eq: "Сигнализация с автозапуском\nАнтикоррозийная обработка\nТонировка", 
-        stdEq: "Система кругового обзора 360\nКожаный салон\nЭлектропривод сиденья водителя\nВентиляция передних сидений\nАудиосистема Sony\nСветодиодные фары", 
-        priceOld: "2 819 900", priceNew: "2 419 900" 
-      }
+      "Active": { specs: OMODA_C5_SPECS, eq: "", stdEq: OMODA_C5_ACTIVE_EQ, priceOld: "", priceNew: "" },
+      "Drive": { specs: OMODA_C5_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" },
+      "Style": { specs: OMODA_C5_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" }
     },
-    "S5": {
-      "Life 1.5 CVT": {
-        specs: "Двигатель: 1.5 л (113 л.с.)\nКПП: Вариатор\nПривод: Передний",
-        eq: "Текстильные коврики\nНабор автомобилиста",
-        stdEq: "Кондиционер\nМультимедиа 10.25\"\nКамера заднего вида\nПодогрев сидений\nДатчик света",
-        priceOld: "2 159 900", priceNew: "1 859 900"
-      }
+    "C7": {
+      "Актив (Передний привод)": { specs: OMODA_C7_FWD_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" },
+      "Драйв (Передний привод)": { specs: OMODA_C7_FWD_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" },
+      "Актив (Полный привод)": { specs: OMODA_C7_AWD_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" },
+      "Драйв (Полный привод)": { specs: OMODA_C7_AWD_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" },
+      "Стиль (Полный привод)": { specs: OMODA_C7_AWD_SPECS, eq: "", stdEq: "", priceOld: "", priceNew: "" }
     }
   },
   "Jaecoo": {
     "J7": {
-      "Lifestyle 1.6T 2WD": {
-        specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Передний\nГод: 2024",
-        eq: "Бронепленка (капот, бампер)\nСетка в решетку радиатора\nКоврики в салон и багажник",
-        stdEq: "Светодиодная оптика\nПанорамная крыша с люком\nСиденья с экокожей\nПодогрев всех сидений\nПанель приборов 10.25\"\nМультимедиа 13.2\"",
-        priceOld: "3 339 900", priceNew: "2 899 900"
-      },
-      "Ultimate 1.6T AWD": {
-        specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Полный AWD\nГод: 2024",
-        eq: "Премиум-керамика кузова\nВидеорегистратор",
-        stdEq: "Адаптивный круиз-контроль (ACC)\nПроекционный дисплей (HUD)\nВентиляция сидений\nАссистент движения в пробке\nМультимедиа 14.8\"\nАудиосистема Sony 8 динамиков",
-        priceOld: "3 749 900", priceNew: "3 249 900"
-      }
+      "Lifestyle 1.6T 2WD": { specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Передний", eq: "Бронепленка (капот, бампер)", stdEq: "Светодиодная оптика\nПанорамная крыша", priceOld: "3 339 900", priceNew: "2 899 900" }
     }
   },
   "Belgee": {
     "X50": {
-      "Active 1.5T 7DCT": {
-        specs: "Двигатель: 1.5 Турбо (150 л.с.)\nКПП: Робот 7DCT\nПривод: Передний",
-        eq: "Защитная сетка радиатора\nАмортизаторы капота",
-        stdEq: "Галогеновые фары\nКондиционер\nПодогрев передних сидений и руля\nКруиз-контроль\nКамера заднего вида\nПарктроники задние",
-        priceOld: "2 290 990", priceNew: "2 140 990"
-      },
-      "Style 1.5T 7DCT": {
-        specs: "Двигатель: 1.5 Турбо (150 л.с.)\nКПП: Робот 7DCT\nПривод: Передний",
-        eq: "Тонировка задней полусферы\nКоврики текстильные",
-        stdEq: "Светодиодные фары LED\nПанорамная крыша\nКлимат-контроль\nБесключевой доступ\nМультимедиа 10.25\"\nЭкокожа",
-        priceOld: "2 400 990", priceNew: "2 250 990"
-      }
+      "Active 1.5T 7DCT": { specs: "Двигатель: 1.5 Турбо (150 л.с.)\nКПП: Робот 7DCT\nПривод: Передний", eq: "Защитная сетка радиатора", stdEq: "Галогеновые фары\nКондиционер", priceOld: "2 290 990", priceNew: "2 140 990" }
     }
   }
 };
+// ==========================================
 
 const $ = id => document.getElementById(id);
 const val = id => $(id).value.trim();
@@ -406,8 +383,8 @@ const setVal = (id, v) => $(id).value = v || '';
 const formatRub = v => { let d = String(v).replace(/\D/g,''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g,'')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v2')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
-const saveDB = () => localStorage.setItem('kp_db_v2', JSON.stringify(db));
+let db = JSON.parse(localStorage.getItem('kp_db_v4')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
+const saveDB = () => localStorage.setItem('kp_db_v4', JSON.stringify(db));
 
 const selBrand = $('catBrand');
 const selModel = $('catModel');
@@ -437,7 +414,11 @@ function applyCatalog() {
   if (!selTrim.value) return;
   const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
   setVal('vCarName', `${selBrand.value} ${selModel.value}`);
-  setVal('vCarPkg', selTrim.value);
+  setVal('vCarPkg', selTrim.value); 
+  
+  setVal('vCarVIN', '');
+  setVal('vCarColor', '');
+  
   setVal('vCarSpecs', data.specs);
   setVal('vCarEq', data.eq);
   setVal('vCarStdEq', data.stdEq);
@@ -473,7 +454,12 @@ function renderKP() {
   $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
   $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
   $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
-  $('outCarSpecs').textContent = val('vCarSpecs') || 'Характеристики не указаны';
+  
+  let specsArr = [];
+  if (val('vCarVIN')) specsArr.push(`VIN-номер: ${val('vCarVIN')}`);
+  if (val('vCarColor')) specsArr.push(`Цвет кузова: ${val('vCarColor')}`);
+  if (val('vCarSpecs')) specsArr.push(val('vCarSpecs'));
+  $('outCarSpecs').textContent = specsArr.join('\n') || 'Характеристики не указаны';
   
   let eqList = val('vCarEq').split('\n').filter(Boolean);
   $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
@@ -508,7 +494,7 @@ function autoNumDate() {
 }
 
 function clearForm() {
-  ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id,''));
+  ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id,''));
   db.imgCar = ''; saveDB(); renderKP();
   selBrand.value = ''; updateModels();
 }
@@ -522,7 +508,7 @@ function saveItem(type) {
     if(!val('tName')) return alert("Назовите шаблон");
     db.tpls.push({ 
       title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'),
-      cn: val('vCarName'), cp: val('vCarPkg'), cs: val('vCarSpecs'), ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'),
+      cn: val('vCarName'), cp: val('vCarPkg'), cvin: val('vCarVIN'), ccol: val('vCarColor'), cs: val('vCarSpecs'), ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'),
       mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail')
     });
     setVal('tName','');
@@ -536,7 +522,7 @@ function loadItem(type, idx) {
     setVal('vMgrName', i.n); setVal('vMgrPhone', i.p); setVal('vMgrEmail', i.e);
   } else if (type === 'tpls') {
     setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp);
-    setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); 
+    setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarVIN', i.cvin); setVal('vCarColor', i.ccol); setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); 
     setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn);
     setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
   }
@@ -552,14 +538,12 @@ function renderLists() {
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
-// === НОВАЯ ФУНКЦИЯ: СКАЧАТЬ КАК КАРТИНКУ ===
 function downloadImage() {
   const btn = $('btn-img');
   const originalText = btn.textContent;
   btn.textContent = '⏳ Делаем фото...';
   btn.disabled = true;
 
-  // Временно заставляем документ стать широким для красивого снимка
   const wasMobile = document.body.classList.contains('mobile-view');
   document.body.classList.remove('mobile-view');
   
@@ -568,14 +552,12 @@ function downloadImage() {
 
   setTimeout(() => {
     html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
-      // Возвращаем все назад
       if (wasMobile) document.body.classList.add('mobile-view');
       element.style.width = '';
       
       let fileName = 'КП_Автосалон.jpg';
       if (val('vCarName')) fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.jpg`;
 
-      // Скачиваем картинку
       const link = document.createElement('a');
       link.download = fileName;
       link.href = canvas.toDataURL('image/jpeg', 0.9);

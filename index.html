@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Генератор КП — Автосалон</title>
+<title>Генератор КП — Максимум</title>
 <style>
 /* --- Базовые стили приложения --- */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -32,6 +32,10 @@ button:hover { background: #1d4ed8; }
 .card .acts { display: flex; gap: 5px; }
 .card button { margin: 0; padding: 5px; font-size: 11px; }
 
+/* --- Блок быстрого каталога --- */
+.catalog-box { background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #bfdbfe; }
+.catalog-box h3 { margin-top: 0; color: #1e3a8a; }
+
 /* --- Стили документа КП --- */
 .preview-wrap { display: flex; flex-direction: column; gap: 15px; }
 .toolbar { display: flex; gap: 10px; background: #fff; padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
@@ -42,7 +46,7 @@ button:hover { background: #1d4ed8; }
 .doc-top-line { height: 5px; border-radius: 10px; margin-bottom: 15px; display: none; }
 .doc-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .doc-dealer { display: flex; gap: 12px; }
-.doc-logo { width: 75px; height: 75px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; }
+.doc-logo { width: 90px; height: 90px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; padding: 4px; }
 .doc-logo img { width: 100%; height: 100%; object-fit: contain; }
 .doc-logo span { font-size: 10px; color: #9ca3af; text-align: center; }
 .doc-meta { text-align: right; font-size: 12px; color: #6b7280; line-height: 1.4; }
@@ -53,7 +57,6 @@ button:hover { background: #1d4ed8; }
 .doc-package { display: inline-block; padding: 4px 8px; background: #eff6ff; color: #1d4ed8; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
 .doc-specs { white-space: pre-line; font-size: 12px; line-height: 1.4; margin-bottom: 10px; }
 
-/* Колонки для списков оборудования */
 .doc-equip { padding-left: 15px; font-size: 11px; line-height: 1.4; column-count: 2; column-gap: 15px; }
 .doc-equip li { break-inside: avoid; margin-bottom: 3px; }
 
@@ -69,7 +72,6 @@ button:hover { background: #1d4ed8; }
 
 .doc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; line-height: 1.4; page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px;}
 
-/* === СТИЛЬ ДЛЯ ВТОРОЙ СТРАНИЦЫ (ОСНАЩЕНИЕ) === */
 .page-two { page-break-before: always; break-before: page; padding-top: 20px; border-top: 2px dashed #d1d5db; display: none; }
 .page-two h4 { font-size: 16px; margin-bottom: 15px; color: #1f2937; }
 
@@ -109,24 +111,37 @@ button:hover { background: #1d4ed8; }
   .panel, .toolbar { display: none !important; }
   #document-container { box-shadow: none; padding: 0; width: 100%; height: auto; margin: 0; border: none; }
   .theme-catalog .doc-photo { margin: 0 0 15px 0; width: 100%; }
-  .page-two { border-top: none; padding-top: 0; } /* Убираем черточку при печати */
+  .page-two { border-top: none; padding-top: 0; }
 }
 </style>
 </head>
 <body>
 
 <aside class="panel">
-  <h2>Генератор КП</h2>
+  <h2>Генератор КП — Максимум</h2>
   
   <div class="tabs">
     <div class="tab active" onclick="switchTab('tab-data', this)">Данные КП</div>
-    <div class="tab" onclick="switchTab('tab-cars', this)">База Авто</div>
     <div class="tab" onclick="switchTab('tab-mgrs', this)">Менеджеры</div>
     <div class="tab" onclick="switchTab('tab-saved', this)">Шаблоны</div>
   </div>
 
-  <!-- ВКЛАДКА: ДАННЫЕ КП -->
   <div id="tab-data" class="tab-content active">
+    
+    <div class="catalog-box">
+      <h3>Быстрый выбор из каталога</h3>
+      <select id="catBrand" onchange="updateModels()">
+        <option value="">-- Выберите бренд --</option>
+      </select>
+      <select id="catModel" onchange="updateTrims()" disabled>
+        <option value="">-- Выберите модель --</option>
+      </select>
+      <select id="catTrim" onchange="applyCatalog()" disabled>
+        <option value="">-- Выберите комплектацию --</option>
+      </select>
+      <span class="hint" style="color: #3b82f6;">Данные ниже заполнятся автоматически</span>
+    </div>
+
     <h3>Дизайн КП</h3>
     <select id="vTheme" onchange="renderKP()">
       <option value="premium">Премиум (Презентация)</option>
@@ -134,15 +149,12 @@ button:hover { background: #1d4ed8; }
       <option value="catalog">Каталог (Большое фото)</option>
     </select>
 
-    <h3>Автосалон</h3>
+    <h3>Автосалон (Вшито в систему)</h3>
     <input id="vDName" placeholder="Название дилера" oninput="renderKP()">
     <input id="vDAddr" placeholder="Адрес" oninput="renderKP()">
-    <div class="row">
-      <input id="vDPhone" placeholder="Телефон" oninput="renderKP()">
-      <input id="vDSite" placeholder="Сайт" oninput="renderKP()">
-    </div>
-    <input type="file" id="vLogo" accept="image/*" class="hint">
-
+    <input id="vDPhone" placeholder="Телефон" oninput="renderKP()">
+    <span class="hint">Логотип и контакты загружаются автоматически. Меняйте поля выше, только если в конкретном КП нужно указать другие данные.</span>
+    
     <h3>Параметры документа</h3>
     <div class="row">
       <input id="vNum" placeholder="Номер КП" oninput="renderKP()">
@@ -150,7 +162,7 @@ button:hover { background: #1d4ed8; }
     </div>
     <button class="btn-sec" onclick="autoNumDate()">Авто-номер и срок +7 дней</button>
 
-    <h3>Автомобиль</h3>
+    <h3>Автомобиль (ручная корректировка)</h3>
     <input id="vCarName" placeholder="Марка и Модель" oninput="renderKP()">
     <input id="vCarPkg" placeholder="Комплектация" oninput="renderKP()">
     <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
@@ -162,6 +174,7 @@ button:hover { background: #1d4ed8; }
       <input id="vPriceOld" placeholder="Базовая цена" oninput="renderKP()">
       <input id="vPriceNew" placeholder="Цена со скидкой" oninput="renderKP()">
     </div>
+    <span class="hint">Загрузить свое фото авто (иначе будет пустое поле):</span>
     <input type="file" id="vCarImg" accept="image/*" class="hint">
 
     <h3>Менеджер</h3>
@@ -172,48 +185,24 @@ button:hover { background: #1d4ed8; }
     </div>
 
     <button onclick="renderKP()">Обновить документ справа</button>
-    <button class="btn-sec" onclick="clearForm()">Очистить форму</button>
+    <button class="btn-sec" onclick="clearForm()">Очистить всё</button>
   </div>
 
-  <!-- ВКЛАДКА: АВТО -->
-  <div id="tab-cars" class="tab-content">
-    <h3>Добавить авто в базу</h3>
-    <input id="cName" placeholder="Марка и Модель (напр. BMW X5)">
-    <input id="cPkg" placeholder="Комплектация">
-    <textarea id="cSpecs" placeholder="Характеристики"></textarea>
-    <textarea id="cEq" placeholder="Доп. оборудование"></textarea>
-    <textarea id="cStdEq" placeholder="Базовое оснащение (длинный список)"></textarea>
-    <div class="row">
-      <input id="cPrice" placeholder="Цена">
-      <input id="cDisc" placeholder="Цена со скидкой">
-    </div>
-    <button onclick="saveItem('cars')">Сохранить авто</button>
-    <button class="btn-sec" onclick="grabFromMain('car')">Взять данные из формы КП</button>
-
-    <h3>Сохраненные автомобили</h3>
-    <div id="list-cars"></div>
-  </div>
-
-  <!-- ВКЛАДКА: МЕНЕДЖЕРЫ -->
   <div id="tab-mgrs" class="tab-content">
     <h3>Добавить менеджера</h3>
     <input id="mName" placeholder="Имя">
     <input id="mPhone" placeholder="Телефон">
     <input id="mEmail" placeholder="Email">
     <button onclick="saveItem('mgrs')">Сохранить менеджера</button>
-    <button class="btn-sec" onclick="grabFromMain('mgr')">Взять из формы КП</button>
-
     <h3>База менеджеров</h3>
     <div id="list-mgrs"></div>
   </div>
 
-  <!-- ВКЛАДКА: ШАБЛОНЫ -->
   <div id="tab-saved" class="tab-content">
-    <h3>Сохранить всё как шаблон</h3>
-    <input id="tName" placeholder="Название шаблона (напр. BMW X5 База)">
-    <button class="btn-green" onclick="saveItem('tpls')">Сохранить текущее КП в базу</button>
-
-    <h3>Сохраненные КП / Шаблоны</h3>
+    <h3>Сохранить КП как шаблон</h3>
+    <input id="tName" placeholder="Название шаблона">
+    <button class="btn-green" onclick="saveItem('tpls')">Сохранить</button>
+    <h3>Сохраненные Шаблоны</h3>
     <div id="list-tpls"></div>
   </div>
 </aside>
@@ -223,19 +212,16 @@ button:hover { background: #1d4ed8; }
     <button onclick="window.print()" class="btn-green">Скачать PDF / Распечатать</button>
   </div>
 
-  <!-- ЕДИНЫЙ КОНТЕЙНЕР ДОКУМЕНТА -->
   <div id="document-container" class="theme-premium">
-    
     <!-- СТРАНИЦА 1 -->
     <div class="doc-top-line"></div>
-    
     <div class="doc-header">
       <div class="doc-dealer">
         <div class="doc-logo" id="outLogo"><span>Логотип</span></div>
         <div>
           <div style="font-size:18px; font-weight:bold;" id="outDName">Название дилера</div>
           <div style="font-size:13px; color:#6b7280;" id="outDAddr">Адрес дилера</div>
-          <div style="font-size:13px; color:#6b7280;" id="outDContacts">Телефон / Сайт</div>
+          <div style="font-size:13px; color:#6b7280;" id="outDContacts">Телефон</div>
         </div>
       </div>
       <div class="doc-meta">
@@ -283,7 +269,7 @@ button:hover { background: #1d4ed8; }
       <div>
         <strong style="display:block; margin-bottom:5px;">Условия предложения:</strong>
         <span id="outValid">Срок действия: —</span><br><br>
-        <span style="font-size:11px; color:#9ca3af;">Данное предложение носит информационный характер и не является публичной офертой. Условия уточняйте у менеджера.</span>
+        <span style="font-size:11px; color:#9ca3af;">Данное предложение носит информационный характер и не является публичной офертой.</span>
       </div>
     </div>
 
@@ -292,23 +278,128 @@ button:hover { background: #1d4ed8; }
         <h4>Базовое оснащение автомобиля:</h4>
         <ul class="doc-equip" id="outCarStdEq"></ul>
     </div>
-
   </div>
 </main>
 
 <script>
-// --- Базовые утилиты ---
+// ====================================================
+// 1. НАСТРОЙКИ ВАШЕГО АВТОСАЛОНА (ВШИТЫ В КОД)
+// ====================================================
+const DEALER_SETTINGS = {
+  logo: "logo.jpg.jpg", 
+  name: "Максимум",
+  address: "Санкт-Петербург, Рыбинская д.1, лит. 3",
+  phone: "+7 (812) 416-96-95"
+};
+
+// --- 2. ДАННЫЕ ДЛЯ КАТАЛОГА ---
+const CATALOG = {
+  "Omoda": {
+    "C5": {
+      "Joy 1.5T CVT": { 
+        specs: "Двигатель: 1.5 Турбо (147 л.с.)\nКПП: Вариатор CVT9\nПривод: Передний\nГод: 2024", 
+        eq: "Коврики салона\nЗащита картера\nЗимняя резина", 
+        stdEq: "Круиз-контроль\nКамера заднего вида\nПодогрев передних сидений\nЛитые диски 18\"\nБесключевой доступ\nКлимат-контроль 2 зоны", 
+        priceOld: "2 679 900", priceNew: "2 279 900" 
+      },
+      "Lifestyle 1.5T CVT": { 
+        specs: "Двигатель: 1.5 Турбо (147 л.с.)\nКПП: Вариатор CVT9\nПривод: Передний\nГод: 2024", 
+        eq: "Сигнализация с автозапуском\nАнтикоррозийная обработка\nТонировка", 
+        stdEq: "Система кругового обзора 360\nКожаный салон\nЭлектропривод сиденья водителя\nВентиляция передних сидений\nАудиосистема Sony\nСветодиодные фары", 
+        priceOld: "2 819 900", priceNew: "2 419 900" 
+      }
+    },
+    "S5": {
+      "Life 1.5 CVT": {
+        specs: "Двигатель: 1.5 л (113 л.с.)\nКПП: Вариатор\nПривод: Передний",
+        eq: "Текстильные коврики\nНабор автомобилиста",
+        stdEq: "Кондиционер\nМультимедиа 10.25\"\nКамера заднего вида\nПодогрев сидений\nДатчик света",
+        priceOld: "2 159 900", priceNew: "1 859 900"
+      }
+    }
+  },
+  "Jaecoo": {
+    "J7": {
+      "Lifestyle 1.6T 2WD": {
+        specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Передний\nГод: 2024",
+        eq: "Бронепленка (капот, бампер)\nСетка в решетку радиатора\nКоврики в салон и багажник",
+        stdEq: "Светодиодная оптика\nПанорамная крыша с люком\nСиденья с экокожей\nПодогрев всех сидений\nПанель приборов 10.25\"\nМультимедиа 13.2\"",
+        priceOld: "3 339 900", priceNew: "2 899 900"
+      },
+      "Ultimate 1.6T AWD": {
+        specs: "Двигатель: 1.6 Турбо (186 л.с.)\nКПП: Робот 7DCT\nПривод: Полный AWD\nГод: 2024",
+        eq: "Премиум-керамика кузова\nВидеорегистратор",
+        stdEq: "Адаптивный круиз-контроль (ACC)\nПроекционный дисплей (HUD)\nВентиляция сидений\nАссистент движения в пробке\nМультимедиа 14.8\"\nАудиосистема Sony 8 динамиков",
+        priceOld: "3 749 900", priceNew: "3 249 900"
+      }
+    }
+  },
+  "Belgee": {
+    "X50": {
+      "Active 1.5T 7DCT": {
+        specs: "Двигатель: 1.5 Турбо (150 л.с.)\nКПП: Робот 7DCT\nПривод: Передний",
+        eq: "Защитная сетка радиатора\nАмортизаторы капота",
+        stdEq: "Галогеновые фары\nКондиционер\nПодогрев передних сидений и руля\nКруиз-контроль\nКамера заднего вида\nПарктроники задние",
+        priceOld: "2 290 990", priceNew: "2 140 990"
+      },
+      "Style 1.5T 7DCT": {
+        specs: "Двигатель: 1.5 Турбо (150 л.с.)\nКПП: Робот 7DCT\nПривод: Передний",
+        eq: "Тонировка задней полусферы\nКоврики текстильные",
+        stdEq: "Светодиодные фары LED\nПанорамная крыша\nКлимат-контроль\nБесключевой доступ\nМультимедиа 10.25\"\nЭкокожа",
+        priceOld: "2 400 990", priceNew: "2 250 990"
+      }
+    }
+  }
+};
+
+// --- 3. ИНИЦИАЛИЗАЦИЯ ---
 const $ = id => document.getElementById(id);
 const val = id => $(id).value.trim();
 const setVal = (id, v) => $(id).value = v || '';
 const formatRub = v => { let d = String(v).replace(/\D/g,''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g,'')) || 0;
 
-// Локальное хранилище
-let db = JSON.parse(localStorage.getItem('kp_db_v2')) || { cars: [], mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
+let db = JSON.parse(localStorage.getItem('kp_db_v2')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
 const saveDB = () => localStorage.setItem('kp_db_v2', JSON.stringify(db));
 
-// Переключение вкладок
+const selBrand = $('catBrand');
+const selModel = $('catModel');
+const selTrim = $('catTrim');
+
+Object.keys(CATALOG).forEach(brand => { selBrand.options.add(new Option(brand, brand)); });
+
+function updateModels() {
+  selModel.innerHTML = '<option value="">-- Выберите модель --</option>';
+  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+  selTrim.disabled = true;
+  if (selBrand.value) {
+    selModel.disabled = false;
+    Object.keys(CATALOG[selBrand.value]).forEach(model => { selModel.options.add(new Option(model, model)); });
+  } else { selModel.disabled = true; }
+}
+
+function updateTrims() {
+  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+  if (selModel.value) {
+    selTrim.disabled = false;
+    Object.keys(CATALOG[selBrand.value][selModel.value]).forEach(trim => { selTrim.options.add(new Option(trim, trim)); });
+  } else { selTrim.disabled = true; }
+}
+
+function applyCatalog() {
+  if (!selTrim.value) return;
+  const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
+  setVal('vCarName', `${selBrand.value} ${selModel.value}`);
+  setVal('vCarPkg', selTrim.value);
+  setVal('vCarSpecs', data.specs);
+  setVal('vCarEq', data.eq);
+  setVal('vCarStdEq', data.stdEq);
+  setVal('vPriceOld', data.priceOld);
+  setVal('vPriceNew', data.priceNew);
+  db.imgCar = ''; $('vCarImg').value = '';
+  renderKP();
+}
+
 function switchTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
@@ -317,25 +408,24 @@ function switchTab(tabId, btn) {
   renderLists();
 }
 
-// Загрузка картинок (Base64)
-$('vLogo').addEventListener('change', function(){ readFile(this, res => { db.imgLogo = res; saveDB(); renderKP(); }); });
 $('vCarImg').addEventListener('change', function(){ readFile(this, res => { db.imgCar = res; saveDB(); renderKP(); }); });
 function readFile(input, cb) {
   if(!input.files[0]) return;
-  let reader = new FileReader();
-  reader.onload = e => cb(e.target.result);
-  reader.readAsDataURL(input.files[0]);
+  let reader = new FileReader(); reader.onload = e => cb(e.target.result); reader.readAsDataURL(input.files[0]);
 }
 
-// --- РЕНДЕР ДОКУМЕНТА ---
 function renderKP() {
   $('document-container').className = `theme-${val('vTheme')}`;
 
-  $('outDName').textContent = val('vDName') || 'Название автосалона';
-  $('outDAddr').textContent = val('vDAddr') || 'г. Город, ул. Улица, д. 1';
-  let contacts = [val('vDPhone'), val('vDSite')].filter(Boolean).join(' • ');
-  $('outDContacts').textContent = contacts || 'Телефон / Сайт';
+  // УМНОЕ АВТОЗАПОЛНЕНИЕ ДИЛЕРА
+  $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
+  $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
+  $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
   
+  // УМНОЕ АВТОЗАПОЛНЕНИЕ ЛОГОТИПА
+  let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
+  $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
+
   $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
   $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
   $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
@@ -344,20 +434,17 @@ function renderKP() {
   $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
   $('outCarSpecs').textContent = val('vCarSpecs') || 'Характеристики не указаны';
   
-  // Доп. Оборудование (1 страница)
   let eqList = val('vCarEq').split('\n').filter(Boolean);
   $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
 
-  // Базовое Оснащение (2 страница)
   let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
   if (stdEqList.length > 0) {
       $('pageTwoBlock').style.display = 'block';
       $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join('');
   } else {
-      $('pageTwoBlock').style.display = 'none'; // Скрываем вторую страницу, если список пуст
+      $('pageTwoBlock').style.display = 'none';
   }
 
-  // Цены
   let pOld = val('vPriceOld'), pNew = val('vPriceNew');
   $('outPriceOld').textContent = formatRub(pOld);
   $('outPriceNew').textContent = formatRub(pNew);
@@ -366,13 +453,10 @@ function renderKP() {
   $('outDiscount').textContent = (diff > 0) ? `Выгода ${diff.toLocaleString('ru-RU')} ₽` : '';
   $('outDiscount').style.display = (diff > 0) ? 'block' : 'none';
 
-  // Менеджер
   $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера';
   $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон';
   $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
 
-  // Картинки
-  $('outLogo').innerHTML = db.imgLogo ? `<img src="${db.imgLogo}">` : '<span>Логотип</span>';
   $('outCarImg').innerHTML = db.imgCar ? `<img src="${db.imgCar}">` : '<span>Фото авто</span>';
 }
 
@@ -384,34 +468,20 @@ function autoNumDate() {
 }
 
 function clearForm() {
-  ['vDName','vDAddr','vDPhone','vDSite','vNum','vDate','vCarName','vCarPkg','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id,''));
-  db.imgLogo = ''; db.imgCar = ''; saveDB(); renderKP();
-}
-
-// --- СПРАВОЧНИКИ ---
-function grabFromMain(type) {
-  if (type === 'car') {
-    setVal('cName', val('vCarName')); setVal('cPkg', val('vCarPkg'));
-    setVal('cSpecs', val('vCarSpecs')); setVal('cEq', val('vCarEq')); setVal('cStdEq', val('vCarStdEq'));
-    setVal('cPrice', val('vPriceOld')); setVal('cDisc', val('vPriceNew'));
-  } else {
-    setVal('mName', val('vMgrName')); setVal('mPhone', val('vMgrPhone')); setVal('mEmail', val('vMgrEmail'));
-  }
+  ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id,''));
+  db.imgCar = ''; saveDB(); renderKP();
+  selBrand.value = ''; updateModels();
 }
 
 function saveItem(type) {
-  if (type === 'cars') {
-    if(!val('cName')) return alert("Введите название машины");
-    db.cars.push({ n: val('cName'), p: val('cPkg'), s: val('cSpecs'), e: val('cEq'), se: val('cStdEq'), pr: val('cPrice'), d: val('cDisc') });
-    ['cName','cPkg','cSpecs','cEq','cStdEq','cPrice','cDisc'].forEach(id=>setVal(id,''));
-  } else if (type === 'mgrs') {
+  if (type === 'mgrs') {
     if(!val('mName')) return alert("Введите имя");
     db.mgrs.push({ n: val('mName'), p: val('mPhone'), e: val('mEmail') });
     ['mName','mPhone','mEmail'].forEach(id=>setVal(id,''));
   } else if (type === 'tpls') {
     if(!val('tName')) return alert("Назовите шаблон");
     db.tpls.push({ 
-      title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'), ds: val('vDSite'),
+      title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'),
       cn: val('vCarName'), cp: val('vCarPkg'), cs: val('vCarSpecs'), ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'),
       mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail')
     });
@@ -422,13 +492,10 @@ function saveItem(type) {
 
 function loadItem(type, idx) {
   let i = db[type][idx];
-  if (type === 'cars') {
-    setVal('vCarName', i.n); setVal('vCarPkg', i.p); setVal('vCarSpecs', i.s);
-    setVal('vCarEq', i.e); setVal('vCarStdEq', i.se); setVal('vPriceOld', i.pr); setVal('vPriceNew', i.d);
-  } else if (type === 'mgrs') {
+  if (type === 'mgrs') {
     setVal('vMgrName', i.n); setVal('vMgrPhone', i.p); setVal('vMgrEmail', i.e);
   } else if (type === 'tpls') {
-    setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp); setVal('vDSite', i.ds);
+    setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp);
     setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); 
     setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn);
     setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
@@ -441,7 +508,6 @@ function delItem(type, idx) {
 }
 
 function renderLists() {
-  $('list-cars').innerHTML = db.cars.map((c,i) => `<div class="card"><b>${c.n}</b><p>${c.p || 'Без компл.'} | ${c.pr || 0} ₽</p><div class="acts"><button class="btn-green" onclick="loadItem('cars',${i})">Вставить</button><button class="btn-red" onclick="delItem('cars',${i})">Удалить</button></div></div>`).join('');
   $('list-mgrs').innerHTML = db.mgrs.map((m,i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }

@@ -2,9 +2,12 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<!-- ЭТОТ ТЕГ ДЕЛАЕТ САЙТ МОБИЛЬНЫМ -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
+
+<!-- Подключаем библиотеку для создания настоящих PDF файлов -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <style>
 /* --- Базовые стили приложения --- */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -41,7 +44,7 @@ button:hover { background: #1d4ed8; }
 /* --- Стили документа КП --- */
 .preview-wrap { display: flex; flex-direction: column; gap: 15px; }
 .toolbar { display: flex; gap: 10px; background: #fff; padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.toolbar button { margin: 0; width: auto; padding: 8px 15px; }
+.toolbar button { margin: 0; width: auto; padding: 10px 20px; font-size: 14px;}
 
 #document-container { width: 210mm; min-height: 297mm; background: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 12mm 15mm; margin: 0 auto; transition: all 0.3s; display: flex; flex-direction: column;}
 
@@ -112,11 +115,10 @@ button:hover { background: #1d4ed8; }
 @media (max-width: 900px) {
   body { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
   .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
-  .row { grid-template-columns: 1fr; } /* Поля ввода друг под другом */
-  .toolbar { justify-content: center; }
-  .toolbar button { width: 100%; text-align: center; }
+  .row { grid-template-columns: 1fr; }
+  .toolbar { justify-content: center; position: sticky; top: 0; z-index: 100; padding: 15px;}
+  .toolbar button { width: 100%; text-align: center; margin: 0;}
   
-  /* Делаем сам документ резиновым для телефона */
   #document-container { width: 100%; padding: 15px; min-height: auto; }
   .doc-header { flex-direction: column; gap: 15px; }
   .doc-meta { text-align: left; }
@@ -126,18 +128,21 @@ button:hover { background: #1d4ed8; }
   .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
   .doc-discount { align-self: flex-start; }
   .doc-footer { grid-template-columns: 1fr; gap: 20px; }
-  .doc-equip { column-count: 1; } /* Список в одну колонку на телефоне */
+  .doc-equip { column-count: 1; }
 }
 
-/* --- ПЕЧАТЬ В PDF --- */
-@page { size: A4; margin: 10mm; }
-@media print {
-  body { background: #fff; padding: 0; display: block; }
-  .panel, .toolbar { display: none !important; }
-  #document-container { box-shadow: none; padding: 0; width: 100%; height: auto; margin: 0; border: none; }
-  .theme-catalog .doc-photo { margin: 0 0 15px 0; width: 100%; }
-  .page-two { border-top: none; padding-top: 0; }
-}
+/* Скрываем элементы при конвертации в PDF */
+.pdf-mode { margin: 0 !important; border: none !important; box-shadow: none !important; width: 210mm !important; padding: 12mm 15mm !important; }
+.pdf-mode .doc-header { flex-direction: row !important; gap: 0 !important; }
+.pdf-mode .doc-meta { text-align: right !important; }
+.pdf-mode .doc-main { flex-direction: row !important; }
+.pdf-mode .theme-catalog .doc-main { flex-direction: column-reverse !important; }
+.pdf-mode .doc-photo { width: 45% !important; margin-top: 0 !important; }
+.pdf-mode .theme-catalog .doc-photo { width: calc(100% + 30mm) !important; margin: -12mm -15mm 15px -15mm !important; }
+.pdf-mode .doc-price-box { flex-direction: row !important; align-items: center !important; }
+.pdf-mode .doc-discount { align-self: auto !important; }
+.pdf-mode .doc-footer { grid-template-columns: 1fr 1fr !important; gap: 15px !important; }
+.pdf-mode .doc-equip { column-count: 2 !important; }
 </style>
 </head>
 <body>
@@ -178,7 +183,6 @@ button:hover { background: #1d4ed8; }
     <input id="vDName" placeholder="Название дилера" oninput="renderKP()">
     <input id="vDAddr" placeholder="Адрес" oninput="renderKP()">
     <input id="vDPhone" placeholder="Телефон" oninput="renderKP()">
-    <span class="hint">Логотип и контакты загружаются автоматически. Меняйте поля выше, только если в конкретном КП нужно указать другие данные.</span>
     
     <h3>Параметры документа</h3>
     <div class="row">
@@ -234,7 +238,8 @@ button:hover { background: #1d4ed8; }
 
 <main class="preview-wrap">
   <div class="toolbar">
-    <button onclick="window.print()" class="btn-green">Скачать PDF / Распечатать</button>
+    <!-- НОВАЯ КНОПКА ДЛЯ СОЗДАНИЯ PDF -->
+    <button id="btn-download" onclick="generateRealPDF()" class="btn-green">Скачать файл PDF</button>
   </div>
 
   <div id="document-container" class="theme-premium">
@@ -307,9 +312,6 @@ button:hover { background: #1d4ed8; }
 </main>
 
 <script>
-// ====================================================
-// 1. НАСТРОЙКИ ВАШЕГО АВТОСАЛОНА (ВШИТЫ В КОД)
-// ====================================================
 const DEALER_SETTINGS = {
   logo: "logo.jpg.jpg", 
   name: "Максимум",
@@ -317,7 +319,6 @@ const DEALER_SETTINGS = {
   phone: "+7 (812) 416-96-95"
 };
 
-// --- 2. ДАННЫЕ ДЛЯ КАТАЛОГА ---
 const CATALOG = {
   "Omoda": {
     "C5": {
@@ -377,7 +378,6 @@ const CATALOG = {
   }
 };
 
-// --- 3. ИНИЦИАЛИЗАЦИЯ ---
 const $ = id => document.getElementById(id);
 const val = id => $(id).value.trim();
 const setVal = (id, v) => $(id).value = v || '';
@@ -441,20 +441,14 @@ function readFile(input, cb) {
 
 function renderKP() {
   $('document-container').className = `theme-${val('vTheme')}`;
-
-  // УМНОЕ АВТОЗАПОЛНЕНИЕ ДИЛЕРА
   $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
   $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
   $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
-  
-  // УМНОЕ АВТОЗАПОЛНЕНИЕ ЛОГОТИПА
   let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
   $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
-
   $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
   $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
   $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
-
   $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
   $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
   $('outCarSpecs').textContent = val('vCarSpecs') || 'Характеристики не указаны';
@@ -473,7 +467,6 @@ function renderKP() {
   let pOld = val('vPriceOld'), pNew = val('vPriceNew');
   $('outPriceOld').textContent = formatRub(pOld);
   $('outPriceNew').textContent = formatRub(pNew);
-  
   let diff = getNum(pOld) - getNum(pNew);
   $('outDiscount').textContent = (diff > 0) ? `Выгода ${diff.toLocaleString('ru-RU')} ₽` : '';
   $('outDiscount').style.display = (diff > 0) ? 'block' : 'none';
@@ -535,6 +528,44 @@ function delItem(type, idx) {
 function renderLists() {
   $('list-mgrs').innerHTML = db.mgrs.map((m,i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
+}
+
+// НОВАЯ ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ НАСТОЯЩЕГО PDF
+function generateRealPDF() {
+  const btn = $('btn-download');
+  const originalText = btn.textContent;
+  
+  // Меняем кнопку, чтобы было понятно, что идет загрузка
+  btn.textContent = '⏳ Формируем PDF...';
+  btn.style.background = '#6b7280';
+  btn.disabled = true;
+
+  const element = $('document-container');
+  
+  // Временно применяем класс, чтобы PDF сфоткался в широком формате A4, даже с телефона
+  element.classList.add('pdf-mode');
+
+  // Имя файла, например: "КП_Omoda_C5.pdf"
+  let fileName = 'Коммерческое_предложение.pdf';
+  if (val('vCarName')) {
+    fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.pdf`;
+  }
+
+  const opt = {
+    margin:       0,
+    filename:     fileName,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    // Возвращаем все как было
+    btn.textContent = originalText;
+    btn.style.background = '#10b981';
+    btn.disabled = false;
+    element.classList.remove('pdf-mode');
+  });
 }
 
 renderLists();

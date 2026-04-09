@@ -131,18 +131,40 @@ button:hover { background: #1d4ed8; }
   .doc-equip { column-count: 1; }
 }
 
-/* Скрываем элементы при конвертации в PDF */
-.pdf-mode { margin: 0 !important; border: none !important; box-shadow: none !important; width: 210mm !important; padding: 12mm 15mm !important; }
+/* ========================================= */
+/* ЖЕСТКИЕ ПРАВИЛА ДЛЯ ИДЕАЛЬНОГО PDF */
+/* ========================================= */
+.pdf-mode { 
+  width: 800px !important; 
+  max-width: 800px !important; 
+  min-width: 800px !important; 
+  padding: 40px 50px !important; 
+  margin: 0 !important; 
+  border: none !important; 
+  box-shadow: none !important; 
+  position: absolute !important; /* Отрываем от телефона */
+  top: 0 !important; 
+  left: 0 !important; 
+  background: #fff !important;
+  transform: none !important;
+}
 .pdf-mode .doc-header { flex-direction: row !important; gap: 0 !important; }
 .pdf-mode .doc-meta { text-align: right !important; }
 .pdf-mode .doc-main { flex-direction: row !important; }
 .pdf-mode .theme-catalog .doc-main { flex-direction: column-reverse !important; }
 .pdf-mode .doc-photo { width: 45% !important; margin-top: 0 !important; }
-.pdf-mode .theme-catalog .doc-photo { width: calc(100% + 30mm) !important; margin: -12mm -15mm 15px -15mm !important; }
-.pdf-mode .doc-price-box { flex-direction: row !important; align-items: center !important; }
+.pdf-mode .theme-catalog .doc-photo { width: calc(100% + 100px) !important; margin: -40px -50px 15px -50px !important; }
+.pdf-mode .doc-price-box { flex-direction: row !important; align-items: center !important; gap: 0 !important;}
 .pdf-mode .doc-discount { align-self: auto !important; }
 .pdf-mode .doc-footer { grid-template-columns: 1fr 1fr !important; gap: 15px !important; }
 .pdf-mode .doc-equip { column-count: 2 !important; }
+
+@media print {
+  body { background: #fff; padding: 0; display: block; }
+  .panel, .toolbar { display: none !important; }
+  #document-container { box-shadow: none; padding: 0; width: 100%; height: auto; margin: 0; border: none; }
+  .page-two { border-top: none; padding-top: 0; }
+}
 </style>
 </head>
 <body>
@@ -238,7 +260,6 @@ button:hover { background: #1d4ed8; }
 
 <main class="preview-wrap">
   <div class="toolbar">
-    <!-- НОВАЯ КНОПКА ДЛЯ СОЗДАНИЯ PDF -->
     <button id="btn-download" onclick="generateRealPDF()" class="btn-green">Скачать файл PDF</button>
   </div>
 
@@ -530,37 +551,36 @@ function renderLists() {
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
-// НОВАЯ ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ НАСТОЯЩЕГО PDF
 function generateRealPDF() {
   const btn = $('btn-download');
   const originalText = btn.textContent;
-  
-  // Меняем кнопку, чтобы было понятно, что идет загрузка
   btn.textContent = '⏳ Формируем PDF...';
   btn.style.background = '#6b7280';
   btn.disabled = true;
 
   const element = $('document-container');
-  
-  // Временно применяем класс, чтобы PDF сфоткался в широком формате A4, даже с телефона
   element.classList.add('pdf-mode');
 
-  // Имя файла, например: "КП_Omoda_C5.pdf"
   let fileName = 'Коммерческое_предложение.pdf';
   if (val('vCarName')) {
     fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.pdf`;
   }
 
+  // ОБМАНЫВАЕМ ТЕЛЕФОН: ГОВОРИМ, ЧТО ШИРИНА ЭКРАНА 800px
   const opt = {
     margin:       0,
     filename:     fileName,
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024 },
+    html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        windowWidth: 800, 
+        width: 800 
+    },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   html2pdf().set(opt).from(element).save().then(() => {
-    // Возвращаем все как было
     btn.textContent = originalText;
     btn.style.background = '#10b981';
     btn.disabled = false;

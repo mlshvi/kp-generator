@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
-<!-- Подключаем библиотеку для создания настоящих PDF файлов -->
+<!-- Подключаем библиотеку для создания PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-/* --- Базовые стили приложения --- */
+/* ========================================= */
+/* БАЗОВЫЕ СТИЛИ (ДЛЯ ПК И PDF)              */
+/* ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
 body { background: #f3f4f6; color: #1f2937; padding: 20px; display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; }
 .panel { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; }
@@ -25,7 +27,6 @@ button:hover { background: #1d4ed8; }
 .btn-red { background: #ef4444; } .btn-red:hover { background: #dc2626; }
 .hint { font-size: 11px; color: #9ca3af; margin-top: -5px; margin-bottom: 10px; display: block; }
 
-/* --- Табы и Карточки --- */
 .tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; flex-wrap: wrap; }
 .tab { padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; background: #f3f4f6; color: #4b5563; flex-grow: 1; text-align: center; }
 .tab.active { background: #2563eb; color: #fff; }
@@ -37,11 +38,9 @@ button:hover { background: #1d4ed8; }
 .card .acts { display: flex; gap: 5px; }
 .card button { margin: 0; padding: 5px; font-size: 11px; }
 
-/* --- Блок быстрого каталога --- */
 .catalog-box { background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #bfdbfe; }
 .catalog-box h3 { margin-top: 0; color: #1e3a8a; }
 
-/* --- Стили документа КП --- */
 .preview-wrap { display: flex; flex-direction: column; gap: 15px; }
 .toolbar { display: flex; gap: 10px; background: #fff; padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
 .toolbar button { margin: 0; width: auto; padding: 10px 20px; font-size: 14px;}
@@ -80,13 +79,12 @@ button:hover { background: #1d4ed8; }
 .page-two { page-break-before: always; break-before: page; padding-top: 20px; border-top: 2px dashed #d1d5db; display: none; }
 .page-two h4 { font-size: 16px; margin-bottom: 15px; color: #1f2937; }
 
-/* === ТЕМА 1: ПРЕМИУМ === */
+/* === ТЕМЫ === */
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
 .theme-premium .doc-price-box { background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
 .theme-premium .doc-price-new { color: #059669; }
 .theme-premium .doc-discount { background: #dcfce7; color: #166534; }
 
-/* === ТЕМА 2: ОФИЦИАЛЬНЫЙ === */
 .theme-official { border: 1px solid #d1d5db; box-shadow: none !important; border-radius: 0 !important; }
 .theme-official .doc-header { border-bottom: 2px solid #111; padding-bottom: 15px; }
 .theme-official .doc-main { flex-direction: column; } 
@@ -97,7 +95,6 @@ button:hover { background: #1d4ed8; }
 .theme-official .doc-discount { border: 1px solid #111; background: #fff; color: #111; border-radius: 0; }
 .theme-official .doc-photo-box, .theme-official .doc-logo { border-radius: 0; border: 1px solid #111; }
 
-/* === ТЕМА 3: КАТАЛОГ === */
 .theme-catalog .doc-top-line { display: none; }
 .theme-catalog .doc-main { flex-direction: column-reverse; gap: 0;}
 .theme-catalog .doc-photo { margin: -12mm -15mm 15px -15mm; width: calc(100% + 30mm); }
@@ -108,10 +105,12 @@ button:hover { background: #1d4ed8; }
 .theme-catalog .doc-package { background: #e2e8f0; color: #374151; }
 .theme-catalog .doc-price-new { color: #111; }
 .theme-catalog .doc-discount { background: #dbeafe; color: #1d4ed8; }
+</style>
 
-/* ========================================= */
-/* --- АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ ТЕЛЕФОНОВ --- */
-/* ========================================= */
+<!-- ========================================= -->
+<!-- ЭТОТ БЛОК ОТКЛЮЧАЕТСЯ ПРИ ГЕНЕРАЦИИ PDF   -->
+<!-- ========================================= -->
+<style id="mobile-css">
 @media (max-width: 900px) {
   body { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
   .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
@@ -119,7 +118,7 @@ button:hover { background: #1d4ed8; }
   .toolbar { justify-content: center; position: sticky; top: 0; z-index: 100; padding: 15px;}
   .toolbar button { width: 100%; text-align: center; margin: 0;}
   
-  #document-container { width: 100%; padding: 15px; min-height: auto; }
+  #document-container { width: 100% !important; padding: 15px; min-height: auto; }
   .doc-header { flex-direction: column; gap: 15px; }
   .doc-meta { text-align: left; }
   .doc-main { flex-direction: column; }
@@ -130,42 +129,8 @@ button:hover { background: #1d4ed8; }
   .doc-footer { grid-template-columns: 1fr; gap: 20px; }
   .doc-equip { column-count: 1; }
 }
-
-/* ========================================= */
-/* ЖЕСТКИЕ ПРАВИЛА ДЛЯ ИДЕАЛЬНОГО PDF */
-/* ========================================= */
-.pdf-mode { 
-  width: 800px !important; 
-  max-width: 800px !important; 
-  min-width: 800px !important; 
-  padding: 40px 50px !important; 
-  margin: 0 !important; 
-  border: none !important; 
-  box-shadow: none !important; 
-  position: absolute !important; /* Отрываем от телефона */
-  top: 0 !important; 
-  left: 0 !important; 
-  background: #fff !important;
-  transform: none !important;
-}
-.pdf-mode .doc-header { flex-direction: row !important; gap: 0 !important; }
-.pdf-mode .doc-meta { text-align: right !important; }
-.pdf-mode .doc-main { flex-direction: row !important; }
-.pdf-mode .theme-catalog .doc-main { flex-direction: column-reverse !important; }
-.pdf-mode .doc-photo { width: 45% !important; margin-top: 0 !important; }
-.pdf-mode .theme-catalog .doc-photo { width: calc(100% + 100px) !important; margin: -40px -50px 15px -50px !important; }
-.pdf-mode .doc-price-box { flex-direction: row !important; align-items: center !important; gap: 0 !important;}
-.pdf-mode .doc-discount { align-self: auto !important; }
-.pdf-mode .doc-footer { grid-template-columns: 1fr 1fr !important; gap: 15px !important; }
-.pdf-mode .doc-equip { column-count: 2 !important; }
-
-@media print {
-  body { background: #fff; padding: 0; display: block; }
-  .panel, .toolbar { display: none !important; }
-  #document-container { box-shadow: none; padding: 0; width: 100%; height: auto; margin: 0; border: none; }
-  .page-two { border-top: none; padding-top: 0; }
-}
 </style>
+
 </head>
 <body>
 
@@ -551,6 +516,7 @@ function renderLists() {
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
+// === УМНАЯ ГЕНЕРАЦИЯ PDF ===
 function generateRealPDF() {
   const btn = $('btn-download');
   const originalText = btn.textContent;
@@ -558,33 +524,45 @@ function generateRealPDF() {
   btn.style.background = '#6b7280';
   btn.disabled = true;
 
+  // 1. ОТКЛЮЧАЕМ МОБИЛЬНУЮ ВЕРСИЮ ДЛЯ СКРИНШОТА
+  const mobileCss = document.getElementById('mobile-css');
+  if(mobileCss) mobileCss.disabled = true;
+
   const element = $('document-container');
-  element.classList.add('pdf-mode');
+  // Жестко фиксируем ширину элемента перед скриншотом
+  element.style.width = '800px';
+  element.style.maxWidth = '800px';
 
   let fileName = 'Коммерческое_предложение.pdf';
   if (val('vCarName')) {
     fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.pdf`;
   }
 
-  // ОБМАНЫВАЕМ ТЕЛЕФОН: ГОВОРИМ, ЧТО ШИРИНА ЭКРАНА 800px
   const opt = {
     margin:       0,
     filename:     fileName,
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        windowWidth: 800, 
-        width: 800 
-    },
+    html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   html2pdf().set(opt).from(element).save().then(() => {
+    // 2. ВОЗВРАЩАЕМ ВСЁ КАК БЫЛО ПОСЛЕ СКАЧИВАНИЯ
+    if(mobileCss) mobileCss.disabled = false;
+    element.style.width = '';
+    element.style.maxWidth = '';
+    
     btn.textContent = originalText;
     btn.style.background = '#10b981';
     btn.disabled = false;
-    element.classList.remove('pdf-mode');
+  }).catch(() => {
+    alert('Пожалуйста, откройте ссылку в обычном браузере (Safari или Chrome). Мессенджеры блокируют скачивание файлов.');
+    if(mobileCss) mobileCss.disabled = false;
+    element.style.width = '';
+    element.style.maxWidth = '';
+    btn.textContent = originalText;
+    btn.style.background = '#10b981';
+    btn.disabled = false;
   });
 }
 

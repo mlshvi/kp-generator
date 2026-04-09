@@ -64,11 +64,11 @@ button:hover { background: #1d4ed8; }
 .doc-equip { padding-left: 15px; font-size: 11px; line-height: 1.4; column-count: 2; column-gap: 15px; }
 .doc-equip li { break-inside: avoid; margin-bottom: 3px; }
 
-.doc-photo { width: 45%; }
-.doc-photo-box { width: 100%; height: 180px; background: transparent; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-/* ИСПРАВЛЕНИЕ: object-fit: contain; чтобы картинка не резалась */
-.doc-photo-box img { width: 100%; height: 100%; object-fit: contain; }
-.doc-photo-box span { font-size: 12px; color: #9ca3af; }
+.doc-photo { width: 45%; display: flex; justify-content: flex-end; align-items: flex-start;}
+/* ИСПРАВЛЕНИЕ: Убрали жесткую высоту, теперь фото сохраняет свои пропорции и не режется */
+.doc-photo-box { width: 100%; background: transparent; display: flex; justify-content: flex-end; }
+.doc-photo-box img { max-width: 100%; height: auto; max-height: 220px; border-radius: 8px; object-fit: contain; }
+.doc-photo-box span { font-size: 12px; color: #9ca3af; padding: 20px; background: #f3f4f6; border-radius: 8px; width: 100%; text-align: center;}
 
 .doc-price-box { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 10px; margin-bottom: 15px; page-break-inside: avoid; break-inside: avoid; }
 .doc-price-old { text-decoration: line-through; font-size: 16px; color: #6b7280; }
@@ -86,17 +86,19 @@ button:hover { background: #1d4ed8; }
 .theme-official { border: 1px solid #d1d5db; box-shadow: none !important; border-radius: 0 !important; }
 .theme-official .doc-header { border-bottom: 2px solid #111; padding-bottom: 15px; }
 .theme-official .doc-main { flex-direction: column; } 
-.theme-official .doc-photo { width: 100%; }
+.theme-official .doc-photo { width: 100%; justify-content: center;}
+.theme-official .doc-photo-box { justify-content: center; }
 .theme-official .doc-package { border: 1px solid #111; background: transparent; color: #111; border-radius: 0; }
 .theme-official .doc-price-box { border: 2px solid #111; background: transparent; border-radius: 0; }
 .theme-official .doc-price-new { color: #111; }
 .theme-official .doc-discount { border: 1px solid #111; background: #fff; color: #111; border-radius: 0; }
-.theme-official .doc-photo-box, .theme-official .doc-logo { border-radius: 0; border: 1px solid #111; }
+.theme-official .doc-photo-box img, .theme-official .doc-logo { border-radius: 0; }
 
 .theme-catalog .doc-top-line { display: none; }
 .theme-catalog .doc-main { flex-direction: column-reverse; gap: 0;}
-.theme-catalog .doc-photo { margin: -12mm -15mm 15px -15mm; width: calc(100% + 30mm); }
-.theme-catalog .doc-photo-box { height: 280px; border-radius: 0; }
+.theme-catalog .doc-photo { margin: -12mm -15mm 15px -15mm; width: calc(100% + 30mm); justify-content: center;}
+.theme-catalog .doc-photo-box { justify-content: center; background: #f3f4f6;}
+.theme-catalog .doc-photo-box img { max-height: 300px; border-radius: 0; object-fit: contain; width: 100%; height: 280px;}
 .theme-catalog .doc-title { text-align: left; font-size: 14px; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
 .theme-catalog .doc-info { display: grid; grid-template-columns: 1fr; }
 .theme-catalog .doc-price-box { background: #f8fafc; border-radius: 12px; flex-direction: column; align-items: flex-start; gap: 5px; }
@@ -117,7 +119,8 @@ body.mobile-view #document-container { width: 100%; padding: 15px; min-height: a
 body.mobile-view .doc-header { flex-direction: column; gap: 15px; }
 body.mobile-view .doc-meta { text-align: left; }
 body.mobile-view .doc-main { flex-direction: column; }
-body.mobile-view .doc-photo { width: 100%; margin-top: 10px; }
+body.mobile-view .doc-photo { width: 100%; margin-top: 10px; justify-content: center;}
+body.mobile-view .doc-photo-box { justify-content: center; }
 body.mobile-view .theme-catalog .doc-photo { margin: -15px -15px 15px -15px; width: calc(100% + 30px); }
 body.mobile-view .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
 body.mobile-view .doc-discount { align-self: flex-start; }
@@ -396,8 +399,8 @@ const setVal = (id, v) => $(id).value = v || '';
 const formatRub = v => { let d = String(v).replace(/\D/g,''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g,'')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v6')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
-const saveDB = () => localStorage.setItem('kp_db_v6', JSON.stringify(db));
+let db = JSON.parse(localStorage.getItem('kp_db_v7')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1 };
+const saveDB = () => localStorage.setItem('kp_db_v7', JSON.stringify(db));
 
 const selBrand = $('catBrand');
 const selModel = $('catModel');

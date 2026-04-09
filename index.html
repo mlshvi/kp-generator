@@ -5,15 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
-<!-- Подключаем библиотеку для создания PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
 /* ========================================= */
-/* БАЗОВЫЕ СТИЛИ (ДЛЯ ПК И PDF)              */
+/* БАЗОВЫЕ СТИЛИ (ОТРИСОВКА А4)              */
 /* ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
-body { background: #f3f4f6; color: #1f2937; padding: 20px; display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; }
+body { background: #f3f4f6; color: #1f2937; padding: 20px; display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; transition: all 0.2s; }
 .panel { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; }
 h2 { font-size: 20px; margin-bottom: 15px; }
 h3 { font-size: 14px; margin: 15px 0 5px; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -81,7 +80,7 @@ button:hover { background: #1d4ed8; }
 
 /* === ТЕМЫ === */
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
-.theme-premium .doc-price-box { background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
+.theme-premium .doc-price-box { background: background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
 .theme-premium .doc-price-new { color: #059669; }
 .theme-premium .doc-discount { background: #dcfce7; color: #166534; }
 
@@ -105,32 +104,35 @@ button:hover { background: #1d4ed8; }
 .theme-catalog .doc-package { background: #e2e8f0; color: #374151; }
 .theme-catalog .doc-price-new { color: #111; }
 .theme-catalog .doc-discount { background: #dbeafe; color: #1d4ed8; }
-</style>
 
-<!-- ========================================= -->
-<!-- ЭТОТ БЛОК ОТКЛЮЧАЕТСЯ ПРИ ГЕНЕРАЦИИ PDF   -->
-<!-- ========================================= -->
-<style id="mobile-css">
-@media (max-width: 900px) {
-  body { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
-  .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
-  .row { grid-template-columns: 1fr; }
-  .toolbar { justify-content: center; position: sticky; top: 0; z-index: 100; padding: 15px;}
-  .toolbar button { width: 100%; text-align: center; margin: 0;}
-  
-  #document-container { width: 100% !important; padding: 15px; min-height: auto; }
-  .doc-header { flex-direction: column; gap: 15px; }
-  .doc-meta { text-align: left; }
-  .doc-main { flex-direction: column; }
-  .doc-photo { width: 100%; margin-top: 10px; }
-  .theme-catalog .doc-photo { margin: -15px -15px 15px -15px; width: calc(100% + 30px); }
-  .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .doc-discount { align-self: flex-start; }
-  .doc-footer { grid-template-columns: 1fr; gap: 20px; }
-  .doc-equip { column-count: 1; }
+/* ========================================= */
+/* МОБИЛЬНАЯ ВЕРСИЯ (РАБОТАЕТ ЧЕРЕЗ КЛАСС)   */
+/* ========================================= */
+body.mobile-view { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
+body.mobile-view .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
+body.mobile-view .row { grid-template-columns: 1fr; }
+body.mobile-view .toolbar { justify-content: center; position: sticky; top: 0; z-index: 100; padding: 15px;}
+body.mobile-view .toolbar button { width: 100%; text-align: center; margin: 0;}
+
+body.mobile-view #document-container { width: 100% !important; padding: 15px; min-height: auto; }
+body.mobile-view .doc-header { flex-direction: column; gap: 15px; }
+body.mobile-view .doc-meta { text-align: left; }
+body.mobile-view .doc-main { flex-direction: column; }
+body.mobile-view .doc-photo { width: 100%; margin-top: 10px; }
+body.mobile-view .theme-catalog .doc-photo { margin: -15px -15px 15px -15px; width: calc(100% + 30px); }
+body.mobile-view .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
+body.mobile-view .doc-discount { align-self: flex-start; }
+body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
+body.mobile-view .doc-equip { column-count: 1; }
+
+/* Правила для системной печати */
+@media print {
+  body { background: #fff; padding: 0; display: block; }
+  .panel, .toolbar { display: none !important; }
+  #document-container { box-shadow: none; padding: 0; width: 100%; height: auto; margin: 0; border: none; }
+  .page-two { border-top: none; padding-top: 0; }
 }
 </style>
-
 </head>
 <body>
 
@@ -166,7 +168,7 @@ button:hover { background: #1d4ed8; }
       <option value="catalog">Каталог (Большое фото)</option>
     </select>
 
-    <h3>Автосалон (Вшито в систему)</h3>
+    <h3>Автосалон</h3>
     <input id="vDName" placeholder="Название дилера" oninput="renderKP()">
     <input id="vDAddr" placeholder="Адрес" oninput="renderKP()">
     <input id="vDPhone" placeholder="Телефон" oninput="renderKP()">
@@ -178,7 +180,7 @@ button:hover { background: #1d4ed8; }
     </div>
     <button class="btn-sec" onclick="autoNumDate()">Авто-номер и срок +7 дней</button>
 
-    <h3>Автомобиль (ручная корректировка)</h3>
+    <h3>Автомобиль</h3>
     <input id="vCarName" placeholder="Марка и Модель" oninput="renderKP()">
     <input id="vCarPkg" placeholder="Комплектация" oninput="renderKP()">
     <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
@@ -190,7 +192,7 @@ button:hover { background: #1d4ed8; }
       <input id="vPriceOld" placeholder="Базовая цена" oninput="renderKP()">
       <input id="vPriceNew" placeholder="Цена со скидкой" oninput="renderKP()">
     </div>
-    <span class="hint">Загрузить свое фото авто (иначе будет пустое поле):</span>
+    <span class="hint">Загрузить свое фото авто:</span>
     <input type="file" id="vCarImg" accept="image/*" class="hint">
 
     <h3>Менеджер</h3>
@@ -229,7 +231,6 @@ button:hover { background: #1d4ed8; }
   </div>
 
   <div id="document-container" class="theme-premium">
-    <!-- СТРАНИЦА 1 -->
     <div class="doc-top-line"></div>
     <div class="doc-header">
       <div class="doc-dealer">
@@ -289,7 +290,6 @@ button:hover { background: #1d4ed8; }
       </div>
     </div>
 
-    <!-- СТРАНИЦА 2 (ОСНАЩЕНИЕ) -->
     <div class="page-two" id="pageTwoBlock">
         <h4>Базовое оснащение автомобиля:</h4>
         <ul class="doc-equip" id="outCarStdEq"></ul>
@@ -298,6 +298,17 @@ button:hover { background: #1d4ed8; }
 </main>
 
 <script>
+// --- ПРОВЕРКА ЭКРАНА И ВКЛЮЧЕНИЕ МОБИЛЬНОЙ ВЕРСИИ ---
+function checkMobile() {
+  if (window.innerWidth <= 900) {
+    document.body.classList.add('mobile-view');
+  } else {
+    document.body.classList.remove('mobile-view');
+  }
+}
+window.addEventListener('resize', checkMobile);
+checkMobile(); // Запускаем при открытии
+
 const DEALER_SETTINGS = {
   logo: "logo.jpg.jpg", 
   name: "Максимум",
@@ -516,7 +527,7 @@ function renderLists() {
   $('list-tpls').innerHTML = db.tpls.map((t,i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'} | Менеджер: ${t.mn || 'Не указан'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
-// === УМНАЯ ГЕНЕРАЦИЯ PDF ===
+// === УЛУЧШЕННАЯ ГЕНЕРАЦИЯ PDF (РАБОТАЕТ НА ВСЕХ УСТРОЙСТВАХ) ===
 function generateRealPDF() {
   const btn = $('btn-download');
   const originalText = btn.textContent;
@@ -524,14 +535,15 @@ function generateRealPDF() {
   btn.style.background = '#6b7280';
   btn.disabled = true;
 
-  // 1. ОТКЛЮЧАЕМ МОБИЛЬНУЮ ВЕРСИЮ ДЛЯ СКРИНШОТА
-  const mobileCss = document.getElementById('mobile-css');
-  if(mobileCss) mobileCss.disabled = true;
-
+  // 1. Узнаем, была ли включена мобильная версия
+  const wasMobile = document.body.classList.contains('mobile-view');
+  
+  // 2. Отключаем мобильную версию и жестко задаем ширину А4 для фотографа
+  document.body.classList.remove('mobile-view');
   const element = $('document-container');
-  // Жестко фиксируем ширину элемента перед скриншотом
-  element.style.width = '800px';
-  element.style.maxWidth = '800px';
+  element.style.width = '794px'; 
+  element.style.minWidth = '794px';
+  element.style.maxWidth = '794px';
 
   let fileName = 'Коммерческое_предложение.pdf';
   if (val('vCarName')) {
@@ -546,24 +558,29 @@ function generateRealPDF() {
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
-  html2pdf().set(opt).from(element).save().then(() => {
-    // 2. ВОЗВРАЩАЕМ ВСЁ КАК БЫЛО ПОСЛЕ СКАЧИВАНИЯ
-    if(mobileCss) mobileCss.disabled = false;
-    element.style.width = '';
-    element.style.maxWidth = '';
-    
-    btn.textContent = originalText;
-    btn.style.background = '#10b981';
-    btn.disabled = false;
-  }).catch(() => {
-    alert('Пожалуйста, откройте ссылку в обычном браузере (Safari или Chrome). Мессенджеры блокируют скачивание файлов.');
-    if(mobileCss) mobileCss.disabled = false;
-    element.style.width = '';
-    element.style.maxWidth = '';
-    btn.textContent = originalText;
-    btn.style.background = '#10b981';
-    btn.disabled = false;
-  });
+  // 3. Ждем треть секунды, чтобы телефон успел перестроить страницу перед снимком
+  setTimeout(() => {
+    html2pdf().set(opt).from(element).save().then(() => {
+      // 4. Возвращаем всё как было
+      if (wasMobile) document.body.classList.add('mobile-view');
+      element.style.width = '';
+      element.style.minWidth = '';
+      element.style.maxWidth = '';
+      
+      btn.textContent = originalText;
+      btn.style.background = '#10b981';
+      btn.disabled = false;
+    }).catch((err) => {
+      alert('Ошибка при сохранении. Попробуйте открыть сайт в Safari или Chrome.');
+      if (wasMobile) document.body.classList.add('mobile-view');
+      element.style.width = '';
+      element.style.minWidth = '';
+      element.style.maxWidth = '';
+      btn.textContent = originalText;
+      btn.style.background = '#10b981';
+      btn.disabled = false;
+    });
+  }, 300); // пауза 300 миллисекунд
 }
 
 renderLists();

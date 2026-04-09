@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<!-- ЭТОТ ТЕГ ДЕЛАЕТ САЙТ МОБИЛЬНЫМ -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 <style>
 /* --- Базовые стили приложения --- */
@@ -21,8 +23,8 @@ button:hover { background: #1d4ed8; }
 .hint { font-size: 11px; color: #9ca3af; margin-top: -5px; margin-bottom: 10px; display: block; }
 
 /* --- Табы и Карточки --- */
-.tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
-.tab { padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; background: #f3f4f6; color: #4b5563; }
+.tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; flex-wrap: wrap; }
+.tab { padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 6px; background: #f3f4f6; color: #4b5563; flex-grow: 1; text-align: center; }
 .tab.active { background: #2563eb; color: #fff; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -46,7 +48,7 @@ button:hover { background: #1d4ed8; }
 .doc-top-line { height: 5px; border-radius: 10px; margin-bottom: 15px; display: none; }
 .doc-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .doc-dealer { display: flex; gap: 12px; }
-.doc-logo { width: 90px; height: 90px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; padding: 4px; }
+.doc-logo { width: 90px; height: 90px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; padding: 4px; flex-shrink: 0;}
 .doc-logo img { width: 100%; height: 100%; object-fit: contain; }
 .doc-logo span { font-size: 10px; color: #9ca3af; text-align: center; }
 .doc-meta { text-align: right; font-size: 12px; color: #6b7280; line-height: 1.4; }
@@ -103,6 +105,29 @@ button:hover { background: #1d4ed8; }
 .theme-catalog .doc-package { background: #e2e8f0; color: #374151; }
 .theme-catalog .doc-price-new { color: #111; }
 .theme-catalog .doc-discount { background: #dbeafe; color: #1d4ed8; }
+
+/* ========================================= */
+/* --- АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ ТЕЛЕФОНОВ --- */
+/* ========================================= */
+@media (max-width: 900px) {
+  body { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
+  .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
+  .row { grid-template-columns: 1fr; } /* Поля ввода друг под другом */
+  .toolbar { justify-content: center; }
+  .toolbar button { width: 100%; text-align: center; }
+  
+  /* Делаем сам документ резиновым для телефона */
+  #document-container { width: 100%; padding: 15px; min-height: auto; }
+  .doc-header { flex-direction: column; gap: 15px; }
+  .doc-meta { text-align: left; }
+  .doc-main { flex-direction: column; }
+  .doc-photo { width: 100%; margin-top: 10px; }
+  .theme-catalog .doc-photo { margin: -15px -15px 15px -15px; width: calc(100% + 30px); }
+  .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .doc-discount { align-self: flex-start; }
+  .doc-footer { grid-template-columns: 1fr; gap: 20px; }
+  .doc-equip { column-count: 1; } /* Список в одну колонку на телефоне */
+}
 
 /* --- ПЕЧАТЬ В PDF --- */
 @page { size: A4; margin: 10mm; }

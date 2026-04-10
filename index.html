@@ -119,9 +119,22 @@ body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
 body.mobile-view .doc-equip { column-count: 1; }
 
 @media print {
+  @page { size: A4; margin: 0; }
+  
   body { display: block; background: #fff; padding: 0; margin: 0; }
   .panel, .toolbar, .telegram-warning { display: none !important; }
-  #document-container { box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+  
+  #document-container { 
+    box-shadow: none; 
+    margin: 0; 
+    padding: 15mm 15mm !important; 
+    width: 100%; 
+    max-width: 100%; 
+    min-height: auto !important; 
+    height: auto !important; 
+  }
+  
+  .doc-footer { margin-bottom: 0 !important; }
   .doc-price-box, .doc-footer, .doc-photo-box { page-break-inside: avoid; break-inside: avoid; }
 }
 

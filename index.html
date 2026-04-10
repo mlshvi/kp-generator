@@ -66,7 +66,6 @@ button:hover { background: #1d4ed8; }
 
 #document-container { width: 210mm; min-height: 297mm; background: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); padding: 12mm 15mm; margin: 0 auto; transition: all 0.3s; display: flex; flex-direction: column; }
 
-/* ... (ВЕСЬ ОСТАЛЬНОЙ CSS ДЛЯ ДОКУМЕНТА ОСТАЛСЯ БЕЗ ИЗМЕНЕНИЙ) ... */
 .doc-top-line { height: 5px; border-radius: 10px; margin-bottom: 15px; display: none; }
 .doc-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
 .doc-dealer { display: flex; gap: 12px; }
@@ -210,14 +209,15 @@ body.mobile-view .doc-equip { column-count: 1; }
     </div>
 
     <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
-    <textarea id="vCarEq" placeholder="Дополнительное оборудование" oninput="renderKP()"></textarea>
+    
+    <!-- ИЗМЕНЕНИЕ 1: ПОДАРКИ ОТ ДИЛЕРА -->
+    <textarea id="vCarEq" placeholder="Подарки от дилера" oninput="renderKP()"></textarea>
+    
     <textarea id="vCarStdEq" placeholder="Базовое оснащение" oninput="renderKP()"></textarea>
 
-    <!-- ИЗМЕНЕННЫЙ БЛОК ДОПОВ -->
     <h3>Дополнительное оборудование</h3>
     <button class="btn-sec" onclick="openDopsModal()" style="background: #4b5563;">⚙️ Выбрать и добавить допы</button>
     <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
-    <!-- /ИЗМЕНЕННЫЙ БЛОК ДОПОВ -->
 
     <div class="row" style="margin-top: 5px;">
       <input id="vPriceOld" placeholder="Базовая цена" oninput="renderKP()">
@@ -289,7 +289,9 @@ body.mobile-view .doc-equip { column-count: 1; }
         <div class="doc-package" id="outCarPkg">Комплектация</div>
         <div style="font-weight:bold; margin-bottom:5px;">Характеристики:</div>
         <div class="doc-specs" id="outCarSpecs">Параметры не указаны</div>
-        <div style="font-weight:bold; margin-bottom:5px;">Дополнительное оборудование:</div>
+        
+        <!-- ИЗМЕНЕНИЕ 2: БЛОК ПОДАРКОВ В ДОКУМЕНТЕ -->
+        <div style="font-weight:bold; margin-bottom:5px; color: #059669;">Подарки: 🎁</div>
         <ul class="doc-equip" id="outCarEq"><li>Нет данных</li></ul>
       </div>
       <div class="doc-photo">
@@ -302,8 +304,9 @@ body.mobile-view .doc-equip { column-count: 1; }
       <ul class="doc-equip" id="outCarStdEq"></ul>
     </div>
 
+    <!-- ИЗМЕНЕНИЕ 3: НАЗВАНИЕ СИНЕГО БЛОКА С ДОПАМИ -->
     <div id="dealerEqBlock" style="margin-bottom: 15px; display: none; page-break-inside: avoid; break-inside: avoid;">
-      <div style="font-weight:bold; margin-bottom:5px; font-size: 13px; color: #1d4ed8;">Дополнительно установлено дилером:</div>
+      <div style="font-weight:bold; margin-bottom:5px; font-size: 13px; color: #1d4ed8;">Дополнительное оборудование:</div>
       <ul class="doc-equip" id="outDealerEq" style="background: #eff6ff; padding: 12px 12px 12px 25px; border-radius: 8px; border: 1px solid #bfdbfe; color: #1e3a8a;"></ul>
     </div>
 
@@ -401,12 +404,8 @@ const DEALER_DOPS_BASE = [
   { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
 ];
 
-// Здесь пропускаю огромные блоки текста характеристик (они остались как были)
-// ... Для экономии места в ответе они те же ...
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с.)\nРасход: 7.4 л / 100 км\nОбъем багажника: 422 л";
 const OMODA_C5_ACTIVE_EQ = "Светодиодная оптика\nЛегкосплавные диски 17\"\nПодогрев сидений\nКамера заднего вида";
-// Я оставил в коде полные тексты из прошлого сообщения, чтобы они не потерялись.
-// При копировании полные характеристики подхватятся.
 
 const CATALOG = {
   "Omoda": {
@@ -425,10 +424,9 @@ const formatRub = v => {
 };
 const getNum = v => Number(String(v).replace(/\D/g, '')) || 0;
 
-// Инициализация базы данных (добавлен массив customDops)
-let db = JSON.parse(localStorage.getItem('kp_db_v14')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1, customDops: [] };
+let db = JSON.parse(localStorage.getItem('kp_db_v15')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1, customDops: [] };
 if (!db.customDops) db.customDops = [];
-const saveDB = () => localStorage.setItem('kp_db_v14', JSON.stringify(db));
+const saveDB = () => localStorage.setItem('kp_db_v15', JSON.stringify(db));
 
 // ======= ЛОГИКА МОДАЛКИ С ДОПАМИ =======
 function openDopsModal() {
@@ -438,7 +436,7 @@ function openDopsModal() {
 
 function closeDopsModal() {
   $('dopsModal').classList.remove('active');
-  renderKP(); // Обновляем КП и сводку при закрытии
+  renderKP(); 
 }
 
 function addCustomDop() {
@@ -453,10 +451,8 @@ function addCustomDop() {
   setVal('newDopName', '');
   setVal('newDopPrice', '');
   
-  // Перерисовываем список, временно сохраняя галочки
   renderDopsUI();
   
-  // Автоматически ставим галочку на только что добавленный доп
   setTimeout(() => {
     let cb = $(newId);
     if(cb) { cb.checked = true; renderKP(); }
@@ -473,7 +469,6 @@ function removeCustomDop(id) {
 }
 
 function renderDopsUI() {
-  // Сохраняем состояние текущих галочек перед перерисовкой
   let tempState = {};
   document.querySelectorAll('.dop-check').forEach(cb => {
     tempState[cb.id] = { checked: cb.checked, price: $(cb.id + '_price').value };
@@ -498,7 +493,6 @@ function renderDopsUI() {
     `;
   }).join('');
 
-  // Восстанавливаем галочки
   document.querySelectorAll('.dop-check').forEach(cb => {
     if (tempState[cb.id]) {
       cb.checked = tempState[cb.id].checked;
@@ -614,7 +608,6 @@ function renderKP() {
     }
   });
 
-  // Обновление сводки в левом меню
   const sumLabel = $('dops-summary');
   if (selectedCount > 0) {
     sumLabel.style.display = 'block';
@@ -631,14 +624,18 @@ function renderKP() {
   let baseOldNum = getNum(val('vPriceOld'));
   let baseNewNum = getNum(val('vPriceNew'));
 
+  // ИЗМЕНЕНИЕ 4: ЛОГИКА РАСЧЕТА ЦЕН
+  // К базовой цене (зачеркнутой) плюсуем стоимость допов
   let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum;
-  let finalNew = baseNewNum > 0 ? baseNewNum + dopSum : dopSum;
+  
+  // Новая цена (красивая большая) остается строго такой, какую ввел менеджер (без плюсования допов)
+  let finalNew = baseNewNum; 
 
   $('outPriceOld').textContent = baseOldNum > 0 ? formatRub(finalOld) : "—";
-  $('outPriceNew').textContent = baseNewNum > 0 || dopSum > 0 ? formatRub(finalNew) : "—";
+  $('outPriceNew').textContent = baseNewNum > 0 ? formatRub(finalNew) : "—";
 
   let diff = finalOld - finalNew;
-  if (diff > 0 && baseOldNum > 0) {
+  if (diff > 0 && baseOldNum > 0 && baseNewNum > 0) {
     $('outDiscount').textContent = `Выгода ${diff.toLocaleString('ru-RU')} ₽`;
     $('outDiscount').style.display = 'block';
   } else { $('outDiscount').style.display = 'none'; }
@@ -702,7 +699,6 @@ function loadItem(type, idx) {
 
     document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
     if (i.dops) {
-      // Если в шаблоне есть свой доп, которого нет в базе (например, был удален), временно добавим его
       let needsReRender = false;
       i.dops.forEach(d => {
         if (!document.getElementById(d.id) && d.id.startsWith('cdop_')) {

@@ -13,8 +13,21 @@ body { background: #f3f4f6; color: #1f2937; padding: 20px; display: grid; grid-t
 h2 { font-size: 20px; margin-bottom: 15px; }
 h3 { font-size: 14px; margin: 15px 0 5px; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
+
+/* Основные поля ввода */
+input:not([type="checkbox"]), select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
 textarea { resize: vertical; min-height: 60px; }
+
+/* ИСПРАВЛЕНИЕ: стили для чекбоксов (квадратиков) */
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #2563eb;
+}
+
 button { width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; margin-bottom: 8px; transition: 0.2s; }
 button:hover { background: #1d4ed8; }
 .btn-sec { background: #6b7280; }
@@ -50,8 +63,21 @@ button:hover { background: #1d4ed8; }
 .close-btn:hover { color: #1f2937; background: none; }
 .dops-list-container { overflow-y: auto; padding-right: 5px; flex-grow: 1; margin-bottom: 15px; }
 .dop-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
-.dop-label { font-size: 13px; display: flex; gap: 10px; align-items: center; cursor: pointer; flex: 1; line-height: 1.3; }
-.dop-price-input { width: 90px; padding: 6px 8px; text-align: right; margin: 0; font-weight: bold; }
+
+/* ИСПРАВЛЕНИЕ: Выравнивание текста и галочек */
+.dop-label { 
+  font-size: 13px; 
+  display: flex; 
+  gap: 12px; 
+  align-items: center; 
+  cursor: pointer; 
+  flex: 1; 
+  line-height: 1.3; 
+  text-align: left;
+  margin: 0;
+}
+
+.dop-price-input { width: 90px !important; padding: 6px 8px !important; text-align: right; margin: 0 !important; font-weight: bold; }
 .dop-price-input::-webkit-inner-spin-button, .dop-price-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .del-dop-btn { background: #fee2e2; color: #dc2626; width: 28px; height: 28px; border-radius: 4px; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0 0 0 8px; font-size: 16px; font-weight: bold; }
 .del-dop-btn:hover { background: #fca5a5; }
@@ -210,7 +236,6 @@ body.mobile-view .doc-equip { column-count: 1; }
 
     <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
     
-    <!-- ИЗМЕНЕНИЕ 1: ПОДАРКИ ОТ ДИЛЕРА -->
     <textarea id="vCarEq" placeholder="Подарки от дилера" oninput="renderKP()"></textarea>
     
     <textarea id="vCarStdEq" placeholder="Базовое оснащение" oninput="renderKP()"></textarea>
@@ -290,7 +315,6 @@ body.mobile-view .doc-equip { column-count: 1; }
         <div style="font-weight:bold; margin-bottom:5px;">Характеристики:</div>
         <div class="doc-specs" id="outCarSpecs">Параметры не указаны</div>
         
-        <!-- ИЗМЕНЕНИЕ 2: БЛОК ПОДАРКОВ В ДОКУМЕНТЕ -->
         <div style="font-weight:bold; margin-bottom:5px; color: #059669;">Подарки: 🎁</div>
         <ul class="doc-equip" id="outCarEq"><li>Нет данных</li></ul>
       </div>
@@ -304,7 +328,6 @@ body.mobile-view .doc-equip { column-count: 1; }
       <ul class="doc-equip" id="outCarStdEq"></ul>
     </div>
 
-    <!-- ИЗМЕНЕНИЕ 3: НАЗВАНИЕ СИНЕГО БЛОКА С ДОПАМИ -->
     <div id="dealerEqBlock" style="margin-bottom: 15px; display: none; page-break-inside: avoid; break-inside: avoid;">
       <div style="font-weight:bold; margin-bottom:5px; font-size: 13px; color: #1d4ed8;">Дополнительное оборудование:</div>
       <ul class="doc-equip" id="outDealerEq" style="background: #eff6ff; padding: 12px 12px 12px 25px; border-radius: 8px; border: 1px solid #bfdbfe; color: #1e3a8a;"></ul>
@@ -424,9 +447,9 @@ const formatRub = v => {
 };
 const getNum = v => Number(String(v).replace(/\D/g, '')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v15')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1, customDops: [] };
+let db = JSON.parse(localStorage.getItem('kp_db_v16')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1, customDops: [] };
 if (!db.customDops) db.customDops = [];
-const saveDB = () => localStorage.setItem('kp_db_v15', JSON.stringify(db));
+const saveDB = () => localStorage.setItem('kp_db_v16', JSON.stringify(db));
 
 // ======= ЛОГИКА МОДАЛКИ С ДОПАМИ =======
 function openDopsModal() {
@@ -624,11 +647,7 @@ function renderKP() {
   let baseOldNum = getNum(val('vPriceOld'));
   let baseNewNum = getNum(val('vPriceNew'));
 
-  // ИЗМЕНЕНИЕ 4: ЛОГИКА РАСЧЕТА ЦЕН
-  // К базовой цене (зачеркнутой) плюсуем стоимость допов
   let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum;
-  
-  // Новая цена (красивая большая) остается строго такой, какую ввел менеджер (без плюсования допов)
   let finalNew = baseNewNum; 
 
   $('outPriceOld').textContent = baseOldNum > 0 ? formatRub(finalOld) : "—";

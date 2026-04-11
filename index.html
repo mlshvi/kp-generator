@@ -19,14 +19,7 @@ input:not([type="checkbox"]), select, textarea { width: 100%; padding: 8px 10px;
 textarea { resize: vertical; min-height: 60px; }
 
 /* Жесткие размеры для квадратиков (галочек), чтобы их не расплющивало */
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  cursor: pointer;
-  flex-shrink: 0;
-  accent-color: #2563eb;
-}
+input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; flex-shrink: 0; accent-color: #2563eb; }
 
 button { width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; margin-bottom: 8px; transition: 0.2s; }
 button:hover { background: #1d4ed8; }
@@ -79,18 +72,7 @@ button:hover { background: #1d4ed8; }
 .dop-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
 
 /* Идеально ровное выравнивание текста рядом с квадратиками */
-.dop-label { 
-  font-size: 13px; 
-  display: flex; 
-  gap: 12px; 
-  align-items: center; 
-  cursor: pointer; 
-  flex: 1; 
-  line-height: 1.3; 
-  text-align: left;
-  margin: 0;
-}
-
+.dop-label { font-size: 13px; display: flex; gap: 12px; align-items: center; cursor: pointer; flex: 1; line-height: 1.3; text-align: left; margin: 0; }
 .dop-price-input { width: 90px !important; padding: 6px 8px !important; text-align: right; margin: 0 !important; font-weight: bold; }
 .dop-price-input::-webkit-inner-spin-button, .dop-price-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .del-dop-btn { background: #fee2e2; color: #dc2626; width: 28px; height: 28px; border-radius: 4px; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0 0 0 8px; font-size: 16px; font-weight: bold; }
@@ -122,6 +104,7 @@ button:hover { background: #1d4ed8; }
 .doc-equip { padding-left: 15px; font-size: 11px; line-height: 1.4; column-count: 2; column-gap: 15px; }
 .doc-equip li { break-inside: avoid; margin-bottom: 3px; }
 
+/* Фото для стандартных дизайнов (одно фото) */
 .doc-photo { width: 45%; display: flex; justify-content: flex-end; align-items: flex-start; }
 .doc-photo-box { width: 100%; background: transparent; display: flex; justify-content: flex-end; }
 .doc-photo-box img { max-width: 100%; height: auto; max-height: 220px; border-radius: 8px; object-fit: contain; }
@@ -134,11 +117,13 @@ button:hover { background: #1d4ed8; }
 
 .doc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; line-height: 1.4; page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px; }
 
+/* Дизайн Премиум */
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
 .theme-premium .doc-price-box { background: linear-gradient(135deg, #f8fafc, #eff6ff); border: 1px solid #dbeafe; }
 .theme-premium .doc-price-new { color: #059669; }
 .theme-premium .doc-discount { background: #dcfce7; color: #166534; }
 
+/* Дизайн Официальный */
 .theme-official { border: 1px solid #d1d5db; box-shadow: none !important; border-radius: 0 !important; }
 .theme-official .doc-header { border-bottom: 2px solid #111; padding-bottom: 15px; }
 .theme-official .doc-main { flex-direction: column; }
@@ -150,18 +135,41 @@ button:hover { background: #1d4ed8; }
 .theme-official .doc-discount { border: 1px solid #111; background: #fff; color: #111; border-radius: 0; }
 .theme-official .doc-photo-box img, .theme-official .doc-logo { border-radius: 0; }
 
+/* ДИЗАЙН КАТАЛОГ (Сетка из 1-3 фото без потери качества) */
 .theme-catalog .doc-top-line { display: none; }
 .theme-catalog .doc-main { flex-direction: column-reverse; gap: 0; }
-.theme-catalog .doc-photo { margin: -12mm -15mm 15px -15mm; width: calc(100% + 30mm); justify-content: center; }
-.theme-catalog .doc-photo-box { justify-content: center; background: #f3f4f6; }
-.theme-catalog .doc-photo-box img { max-height: 300px; border-radius: 0; object-fit: contain; width: 100%; height: 280px; }
-.theme-catalog .doc-title { text-align: left; font-size: 14px; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
+.theme-catalog .doc-photo { margin: -12mm -15mm 15px -15mm; width: calc(100% + 30mm); justify-content: center; background: #f3f4f6; padding: 15px 0; border-radius: 12px 12px 0 0; }
+.theme-catalog .doc-photo-box { 
+  display: grid; 
+  gap: 15px; 
+  padding: 0 15px; 
+  width: 100%; 
+  align-items: center; 
+  justify-items: center; 
+}
+/* Сетка для разного кол-ва фото */
+.theme-catalog .doc-photo-box[data-count="1"] { grid-template-columns: 1fr; }
+.theme-catalog .doc-photo-box[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.theme-catalog .doc-photo-box[data-count="3"] { grid-template-columns: 1fr 1fr 1fr; }
+
+.theme-catalog .doc-photo-box img { 
+  width: 100%; 
+  max-height: 280px; 
+  object-fit: contain; /* Гарантирует, что фото не обрежется и сохранит пропорции! */
+  border-radius: 8px; 
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  background: #fff;
+  padding: 5px;
+}
+
+.theme-catalog .doc-title { text-align: left; font-size: 14px; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; margin-top: 10px; }
 .theme-catalog .doc-info { display: grid; grid-template-columns: 1fr; }
 .theme-catalog .doc-price-box { background: #f8fafc; border-radius: 12px; flex-direction: column; align-items: flex-start; gap: 5px; }
 .theme-catalog .doc-package { background: #e2e8f0; color: #374151; }
 .theme-catalog .doc-price-new { color: #111; }
 .theme-catalog .doc-discount { background: #dbeafe; color: #1d4ed8; }
 
+/* Мобильный вид */
 body.mobile-view { display: flex; flex-direction: column; padding: 10px; gap: 15px; }
 body.mobile-view .panel { position: static; max-height: none; box-shadow: none; border: 1px solid #e5e7eb; padding: 15px; }
 body.mobile-view .row { grid-template-columns: 1fr; }
@@ -173,7 +181,10 @@ body.mobile-view .doc-meta { text-align: left; }
 body.mobile-view .doc-main { flex-direction: column; }
 body.mobile-view .doc-photo { width: 100%; margin-top: 10px; justify-content: center; }
 body.mobile-view .doc-photo-box { justify-content: center; }
-body.mobile-view .theme-catalog .doc-photo { margin: -15px -15px 15px -15px; width: calc(100% + 30px); }
+body.mobile-view .theme-catalog .doc-photo { margin: -15px -15px 15px -15px; width: calc(100% + 30px); border-radius: 0; }
+body.mobile-view .theme-catalog .doc-photo-box[data-count="2"],
+body.mobile-view .theme-catalog .doc-photo-box[data-count="3"] { grid-template-columns: 1fr; } /* На телефоне выстраиваем в столбик */
+body.mobile-view .theme-catalog .doc-photo-box img { max-height: 200px; }
 body.mobile-view .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
 body.mobile-view .doc-discount { align-self: flex-start; }
 body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
@@ -224,7 +235,7 @@ body.mobile-view .doc-equip { column-count: 1; }
     <select id="vTheme" onchange="renderKP()">
       <option value="premium">Премиум (Презентация)</option>
       <option value="official">Официальный (Бланк)</option>
-      <option value="catalog">Каталог (Большое фото)</option>
+      <option value="catalog">Каталог (Больше фотографий)</option>
     </select>
 
     <h3>Автосалон</h3>
@@ -309,8 +320,8 @@ body.mobile-view .doc-equip { column-count: 1; }
       </div>
     </div>
 
-    <span class="hint" style="margin-top: 15px;">Загрузить своё фото авто:</span>
-    <input type="file" id="vCarImg" accept="image/*" class="hint">
+    <span class="hint" style="margin-top: 15px; display:block;">Фото авто (можно выделить до 3 шт):</span>
+    <input type="file" id="vCarImg" accept="image/*" multiple class="hint" title="Выберите от 1 до 3 фото">
 
     <h3>Менеджер</h3>
     <input id="vMgrName" placeholder="Имя Фамилия" oninput="renderKP()">
@@ -456,7 +467,7 @@ const isWebview = navigator.userAgent.includes('Instagram') || navigator.userAge
 if (isWebview) document.getElementById('tgWarning').style.display = 'block';
 
 const DEALER_SETTINGS = {
-  logo: "logo.jpg.jpg",
+  logo: "logo.jpg",
   name: "Максимум",
   address: "Санкт-Петербург, Рыбинская д.1, лит. 3",
   phone: "+7 (812) 416-96-95"
@@ -606,9 +617,12 @@ const formatRub = v => {
 };
 const getNum = v => Number(String(v).replace(/\D/g, '')) || 0;
 
-let db = JSON.parse(localStorage.getItem('kp_db_v19')) || { mgrs: [], tpls: [], imgLogo: '', imgCar: '', counter: 1, customDops: [] };
+// Обновление базы под массив фотографий
+let db = JSON.parse(localStorage.getItem('kp_db_v22')) || { mgrs: [], tpls: [], imgLogo: '', imgCars: [], counter: 1, customDops: [] };
 if (!db.customDops) db.customDops = [];
-const saveDB = () => localStorage.setItem('kp_db_v19', JSON.stringify(db));
+if (!db.imgCars) db.imgCars = [];
+if (db.imgCar) { db.imgCars = [db.imgCar]; delete db.imgCar; } 
+const saveDB = () => localStorage.setItem('kp_db_v22', JSON.stringify(db));
 
 // ======= ЛОГИКА КАЛЬКУЛЯТОРОВ =======
 function toggleCalc(contentId, iconId) {
@@ -778,11 +792,11 @@ function applyCatalog() {
   setVal('vPriceNew', data.priceNew);
   
   document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-  db.imgCar = ''; saveDB(); renderKP(); calculateMargin(); calculateOjMargin();
+  db.imgCars = []; saveDB(); renderKP(); calculateMargin(); calculateOjMargin();
 }
 
 function normalizeCarKey(name) { return (name || '').toLowerCase().replace(/\s+/g, '').replace(/plus/g, '+'); }
-function onCarNameInput() { db.imgCar = ''; saveDB(); renderKP(); }
+function onCarNameInput() { db.imgCars = []; saveDB(); renderKP(); }
 
 function switchTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -790,19 +804,28 @@ function switchTab(tabId, btn) {
   $(tabId).classList.add('active'); btn.classList.add('active'); renderLists();
 }
 
-$('vCarImg').addEventListener('change', function () {
-  readFile(this, res => { db.imgCar = res; saveDB(); renderKP(); });
+// Загрузка до 3-х фотографий
+$('vCarImg').addEventListener('change', async function () {
+  if (!this.files.length) return;
+  
+  const files = Array.from(this.files).slice(0, 3); // Максимум 3 фото
+  const base64Promises = files.map(file => {
+    return new Promise(resolve => {
+      let reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  });
+  
+  db.imgCars = await Promise.all(base64Promises);
+  saveDB(); 
+  renderKP();
 });
 
-function readFile(input, cb) {
-  if (!input.files[0]) return;
-  let reader = new FileReader();
-  reader.onload = e => cb(e.target.result);
-  reader.readAsDataURL(input.files[0]);
-}
-
 function renderKP() {
-  $('document-container').className = `theme-${val('vTheme')}`;
+  const theme = val('vTheme');
+  $('document-container').className = `theme-${theme}`;
+  
   $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
   $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
   $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
@@ -862,7 +885,7 @@ function renderKP() {
   let baseOldNum = getNum(val('vPriceOld'));
   let baseNewNum = getNum(val('vPriceNew'));
 
-  // Логика цен (допы идут в старую цену, а новая остается той, что ввели)
+  // Логика цен
   let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum;
   let finalNew = baseNewNum; 
 
@@ -879,10 +902,29 @@ function renderKP() {
   $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон';
   $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
 
+  // ЛОГИКА ОТОБРАЖЕНИЯ ФОТОГРАФИЙ
   const carKey = normalizeCarKey(val('vCarName'));
-  if (db.imgCar) $('outCarImg').innerHTML = `<img src="${db.imgCar}">`;
-  else if (carKey && AUTO_IMAGES[carKey]) $('outCarImg').innerHTML = `<img src="${AUTO_IMAGES[carKey]}">`;
-  else $('outCarImg').innerHTML = '<span>Фото авто</span>';
+  const photoBox = $('outCarImg');
+  
+  let imagesToRender = [];
+  if (db.imgCars && db.imgCars.length > 0) {
+    imagesToRender = db.imgCars;
+  } else if (carKey && AUTO_IMAGES[carKey]) {
+    imagesToRender = [AUTO_IMAGES[carKey]];
+  }
+
+  // Если это не дизайн "Каталог" (Больше фото), то обрезаем массив до 1 фото
+  if (theme !== 'catalog' && imagesToRender.length > 0) {
+    imagesToRender = [imagesToRender[0]];
+  }
+
+  if (imagesToRender.length > 0) {
+    photoBox.setAttribute('data-count', imagesToRender.length);
+    photoBox.innerHTML = imagesToRender.map(img => `<img src="${img}">`).join('');
+  } else {
+    photoBox.setAttribute('data-count', 0);
+    photoBox.innerHTML = '<span>Фото авто</span>';
+  }
 }
 
 function autoNumDate() {
@@ -895,7 +937,8 @@ function autoNumDate() {
 function clearForm() {
   ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
   document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-  db.imgCar = ''; saveDB(); renderKP(); selBrand.value = ''; updateModels();
+  $('vCarImg').value = '';
+  db.imgCars = []; saveDB(); renderKP(); selBrand.value = ''; updateModels();
   calculateMargin(); calculateOjMargin();
 }
 

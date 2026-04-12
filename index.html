@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
+<!-- Асинхронная загрузка библиотек (не вешает страницу) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
@@ -516,6 +517,48 @@ const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
 const formatRub = v => { let d = String(v).replace(/\D/g, ''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g, '')) || 0;
 
+// ВОССТАНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ ТЕЛЕФОНОВ
+function formatPhone(input) {
+  let val = input.value.replace(/\D/g, '');
+  if (!val) { input.value = ''; return; }
+  if (val[0] === '7' || val[0] === '8') val = val.slice(1);
+  let res = '+7 ';
+  if (val.length > 0) res += '(' + val.substring(0, 3);
+  if (val.length >= 4) res += ') ' + val.substring(3, 6);
+  if (val.length >= 7) res += '-' + val.substring(6, 8);
+  if (val.length >= 9) res += '-' + val.substring(8, 10);
+  input.value = res;
+}
+
+// ВОССТАНОВЛЕННАЯ ФУНКЦИЯ БЭКАПА
+function exportDB() {
+  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+  let dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  dlAnchorElem.setAttribute("download", "kp_backup.json");
+  dlAnchorElem.click();
+}
+
+// ВОССТАНОВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ БЭКАПА
+function importDB(input) {
+  if (!input.files || input.files.length === 0) return;
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let imported = JSON.parse(e.target.result);
+      if (imported && typeof imported === 'object') {
+        db = imported;
+        saveDB();
+        alert("База успешно загружена! Страница будет обновлена.");
+        location.reload();
+      }
+    } catch(err) {
+      alert("Ошибка: Неверный формат файла");
+    }
+  };
+  reader.readAsText(input.files[0]);
+}
+
 function formatInputNumber(el) {
   if (!el) return;
   let cursor = el.selectionStart; 
@@ -586,39 +629,159 @@ const BELGEE_X70_2WD_SPECS = "Двигатель: 1.5 Турбо (150 л.с., 25
 const BELGEE_X70_4WD_SPECS = "Двигатель: 1.5 Турбо + Мягкий гибрид 48V (150 л.с., 300 Нм)\nКПП: 7-ступенчатый робот (7DCT)\nПривод: Полный\nРазгон 0-100 км/ч: 12.3 сек\nРасход (смешанный): 7.3 л / 100 км (АИ-95)\nДорожный просвет: 171 мм\nГабариты: 4544 × 1831 × 1713 мм\nОбъем багажника: 378 л\nТопливный бак: 58 л";
 const BELGEE_X70_ACTIVE_EQ = "Галогеновые фары ближнего/дальнего света с LED-ДХО и задние светодиодные фонари\nЛегкосплавные диски 17\" и рейлинги на крыше\nОтделка салона экокожей со вставками под «карбон»\nЦифровая приборная панель и мультимедиа 12.3\" (6 динамиков, дублирование смартфона)\nДвухзонный климат-контроль и базовый круиз-контроль\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя стеклоочистителей и форсунок\nКамера заднего вида и задние датчики парковки\nБесключевой запуск (кнопка) и электромеханический ручник с AutoHold\nПакет активной безопасности (ESC, ABS, помощь на подъеме/спуске, контроль усталости)\n4 подушки безопасности (фронтальные и боковые)";
 const BELGEE_X70_STYLE_EQ = "Светодиодная оптика (LED фары, ДХО, фонари) с датчиками света и дождя\nЛегкосплавные диски 17\" и рейлинги на крыше\nОтделка салона экокожей со вставками под «карбон»\nЦифровая приборная панель и мультимедиа 12.3\" с дублированием смартфона\nДвухзонный климат-контроль и базовый круиз-контроль\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя дворников и форсунок\nСистема бесключевого доступа и кнопка запуска двигателя\nКамера заднего вида + передние и задние датчики парковки\nСалонное зеркало с автозатемнением\nЭлектромеханический ручник (EPB) с функцией AutoHold\n6 подушек безопасности (фронтальные, боковые и шторки)";
-const BELGEE_X70_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (автодальний свет, динамические поворотники)\nЛегкосплавные диски 18\" и рейлинги на крыше\nОтделка салона экокожей, атмосферная подсветка интерьера\nЦифровая приборная панель и мультимедиа 12.3\" + беспроводная зарядка и 8 динамиков\nДвухзонный климат-контроль и интеллектуальный круиз-контроль (ICC)\n«Теплые опции»: подогрев всех сидений, руля, зоны покоя дворников и форсунок\nСиденье водителя с электроприводом\nБесключевой доступ, кнопка запуска и электропривод двери багажника\nЭлектроскладывание зеркал и салонное зеркало с автозатемнением\nСистема камер кругового обзора 360° + передние и задние парктроники\nКомплекс умных ассистентов (ADAS): автоторможение, удержание в полосе, чтение знаков\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const BELGEE_X70_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (автодальний свет, динамические поворотники)\nЛегкосплавные диски 18\" и рейлинги на крыше\nОтделка салона экокожей, атмосферная подсветка интерьера\nЦифSETTINGS.phone;
 
-const BASE_CATALOG = {
-  "Omoda": {
-    "C5": { "Active": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Drive": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_DRIVE_EQ, priceOld: "", priceNew: "" }, "Style": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_STYLE_EQ, priceOld: "", priceNew: "" } },
-    "C7": { "Актив (Передний привод)": { specs: OMODA_C7_FWD_SPECS, stdEq: OMODA_C7_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Драйв (Передний привод)": { specs: OMODA_C7_FWD_SPECS, stdEq: OMODA_C7_DRIVE_EQ, priceOld: "", priceNew: "" }, "Актив (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Драйв (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_DRIVE_EQ, priceOld: "", priceNew: "" }, "Стиль (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_STYLE_EQ, priceOld: "", priceNew: "" } }
-  },
-  "Jaecoo": {
-    "J6": { "Актив": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Комфорт": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
-    "J7": { "Комфорт (Передний привод)": { specs: JAECOO_J7_FWD_SPECS, stdEq: JAECOO_J7_COMFORT_EQ, priceOld: "", priceNew: "" }, "Комфорт (Полный привод)": { specs: JAECOO_J7_AWD_SPECS, stdEq: JAECOO_J7_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж (Передний привод)": { specs: JAECOO_J7_FWD_SPECS, stdEq: JAECOO_J7_PRESTIGE_EQ, priceOld: "", priceNew: "" }, "Престиж (Полный привод)": { specs: JAECOO_J7_AWD_SPECS, stdEq: JAECOO_J7_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
-    "J8": { "Комфорт": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_PRESTIGE_EQ, priceOld: "", priceNew: "" }, "Престиж+": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_PRESTIGE_PLUS_EQ, priceOld: "", priceNew: "" } }
-  },
-  "Belgee": {
-    "S50": { "Актив (Механика)": { specs: BELGEE_S50_MT_SPECS, stdEq: BELGEE_S50_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Актив (Автомат)": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
-    "X50+": { "Актив": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_STYLE_EQ, priceOld: "", priceNew: "" }, "Оникс": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_ONYX_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
-    "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
+  let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
+  if ($('outLogo')) $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
+
+  if ($('outNum')) $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
+  if ($('outToday')) $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
+  if ($('outValid')) $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
+
+  if ($('outCarName')) $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
+  if ($('outCarPkg')) $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
+
+  let specsArr = [];
+  if (val('vCarVIN')) specsArr.push(`VIN-номер: ${val('vCarVIN')}`);
+  if (val('vCarColor')) specsArr.push(`Цвет кузова: ${val('vCarColor')}`);
+  if (val('vCarSpecs')) specsArr.push(val('vCarSpecs'));
+  if ($('outCarSpecs')) $('outCarSpecs').textContent = specsArr.join('\n') || 'Характеристики не указаны';
+
+  let eqList = val('vCarEq').split('\n').filter(Boolean);
+  if ($('outCarEq')) $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
+
+  let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
+  if ($('stdEqBlock') && $('outCarStdEq')) {
+      if (stdEqList.length > 0) { $('stdEqBlock').style.display = 'block'; $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join(''); } 
+      else { $('stdEqBlock').style.display = 'none'; }
   }
-};
 
-let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
-let currentCatalogSupport = ""; 
+  let dopSum = 0; let selectedCount = 0; let dopItems = [];
+  document.querySelectorAll('.dop-check').forEach(cb => {
+    if (cb.checked) { 
+        let prInput = $(cb.id + '_price'); 
+        let p = prInput ? (parseInt(prInput.value) || 0) : 0; 
+        dopSum += p; selectedCount++; 
+        dopItems.push(`<b>${cb.dataset.name}</b> — ${p.toLocaleString('ru-RU')} ₽`); 
+    }
+  });
 
-function checkMobile() { if (window.innerWidth <= 900) document.body.classList.add('mobile-view'); else document.body.classList.remove('mobile-view'); }
-window.addEventListener('resize', checkMobile); checkMobile();
+  const sumLabel = $('dops-summary');
+  if (sumLabel) {
+      if (selectedCount > 0) { sumLabel.style.display = 'block'; sumLabel.textContent = `Выбрано опций: ${selectedCount} (на ${dopSum.toLocaleString('ru-RU')} ₽)`; } 
+      else { sumLabel.style.display = 'none'; }
+  }
 
-const DEALER_SETTINGS = { logo: "logo.jpg.jpg", name: "Максимум", address: "Санкт-Петербург, Рыбинская д.1, лит. 3", phone: "+7 (812) 416-96-95" };
-const AUTO_IMAGES = { "omodac5": "omodac5.webp", "omodac7": "omodac7.webp", "jaecooj6": "jaecooj6.webp", "jaecooj7": "jaecooj7.webp", "jaecooj8": "jaecooj8.webp", "belgees50": "belgees50.webp", "belgeex50+": "belgeex50.webp", "belgeex50plus": "belgeex50.webp", "belgeex70": "belgeex70.webp" };
+  if ($('dealerEqBlock') && $('outDealerEq')) {
+      if (dopItems.length > 0) { $('dealerEqBlock').style.display = 'block'; $('outDealerEq').innerHTML = dopItems.map(i => `<li>${i}</li>`).join(''); } 
+      else { $('dealerEqBlock').style.display = 'none'; }
+  }
 
-const DEALER_DOPS_BASE = [
-  { id: 'bdop1', name: 'Пакет "Оклейка капота (защитной пленкой)"', price: 43350 }, { id: 'bdop2', name: 'Пакет "Оклейка под ручками дверей"', price: 8390 },
-  { id: 'bdop3', name: 'Пакет "Оклейка полоса на капот"', price: 24450 }, { id: 'bdop4', name: 'Пакет "Оклейка полоса на крышу"', price: 18900 },
-  { id: 'bdop5', name: 'Пакет "Оклейка порогов 4 шт"', price: 12780 }, { id: 'bdop6', name: 'Пакет "Оклейка фар (защитной пленкой)"', price: 15890 },
-  { id:" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
+  let baseOldNum = getNum(val('vPriceOld')); let baseNewNum = getNum(val('vPriceNew'));
+  let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum; let finalNew = baseNewNum; 
+
+  if ($('outPriceOld')) $('outPriceOld').textContent = baseOldNum > 0 ? formatRub(finalOld) : "—";
+  if ($('outPriceNew')) $('outPriceNew').textContent = baseNewNum > 0 ? formatRub(finalNew) : "—";
+
+  let diff = finalOld - finalNew;
+  if ($('outDiscount')) {
+      if (diff > 0 && baseOldNum > 0 && baseNewNum > 0) { $('outDiscount').textContent = `Выгода ${diff.toLocaleString('ru-RU')} ₽`; $('outDiscount').style.display = 'block'; } 
+      else { $('outDiscount').style.display = 'none'; }
+  }
+
+  // ОТОБРАЖЕНИЕ КРЕДИТНОГО БЛОКА В ДОКУМЕНТЕ
+  const creditBadge = $('outCreditBadge');
+  const showCredit = $('showCreditInKP');
+  const creditPaymentNum = getNum($('outCreditPayment') ? $('outCreditPayment').textContent : '');
+  if (creditBadge && showCredit) {
+      if (showCredit.checked && creditPaymentNum > 0) {
+          creditBadge.style.display = 'flex';
+      } else {
+          creditBadge.style.display = 'none';
+      }
+  }
+
+  if ($('outMgrName')) $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера'; 
+  if ($('outMgrPhone')) $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон'; 
+  if ($('outMgrEmail')) $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
+
+  const carKey = normalizeCarKey(val('vCarName')); const photoBox = $('outCarImg'); let imagesToRender = [];
+  if (db.imgCars && db.imgCars.length > 0) { imagesToRender = db.imgCars; } else if (carKey && AUTO_IMAGES[carKey]) { imagesToRender = [AUTO_IMAGES[carKey]]; }
+  if (val('vTheme') !== 'catalog' && imagesToRender.length > 0) { imagesToRender = [imagesToRender[0]]; }
+  if (photoBox) {
+      if (imagesToRender.length > 0) { photoBox.setAttribute('data-count', imagesToRender.length); photoBox.innerHTML = imagesToRender.map(img => `<img src="${img}">`).join(''); } 
+      else { photoBox.setAttribute('data-count', 0); photoBox.innerHTML = '<span>Фото авто</span>'; }
+  }
+}
+
+function autoNumDate() {
+  setVal('vNum', `${new Date().getFullYear()}-${String(db.counter++).padStart(3, '0')}`);
+  let d = new Date(); d.setDate(d.getDate() + 7); setVal('vDate', `до ${d.toLocaleDateString('ru-RU')}`); saveDB(); renderKP();
+}
+
+function confirmClear() {
+  if(confirm("Очистить все данные в анкете?")) {
+    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount', 'creditInitialRub', 'creditInitialPct', 'vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
+    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+    db.imgCars = []; const cb = $('useTISupport'); if(cb) cb.checked = false; currentCatalogSupport = "";
+    const showCr = $('showCreditInKP'); if(showCr) showCr.checked = false;
+    setVal('creditTerm', '84'); setVal('creditRate', '19.9');
+    saveDB(); renderGallery(); renderKP(); const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
+    calculateMargin(); calculateOjMargin(); calculateCredit('price'); showToast("Анкета очищена!");
+  }
+}
+
+function saveItem(type) {
+  if (type === 'mgrs') {
+    if (!val('mName')) return showToast("❌ Введите имя менеджера", true);
+    db.mgrs.push({ n: val('mName'), p: val('mPhone'), e: val('mEmail') }); ['mName','mPhone','mEmail'].forEach(id => setVal(id, ''));
+  } else if (type === 'tpls') {
+    if (!val('tName')) return showToast("❌ Назовите шаблон", true); let savedDops = [];
+    document.querySelectorAll('.dop-check').forEach(cb => { 
+        if (cb.checked) {
+            let pr = $(cb.id + '_price');
+            savedDops.push({ id: cb.id, price: pr ? pr.value : 0, name: cb.dataset.name }); 
+        }
+    });
+    db.tpls.push({
+      title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'), cn: val('vCarName'), cp: val('vCarPkg'), cvin: val('vCarVIN'), ccol: val('vCarColor'), cs: val('vCarSpecs'),
+      ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'), mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail'), dops: savedDops,
+      crTerm: val('creditTerm'), crRate: val('creditRate'), crRub: val('creditInitialRub'), crCheck: $('showCreditInKP') ? $('showCreditInKP').checked : false
+    });
+    setVal('tName', '');
+  }
+  saveDB(); renderLists(); showToast("✅ Сохранено!");
+}
+
+function loadItem(type, idx) {
+  let i = db[type][idx]; if (!i) return;
+  if (type === 'mgrs') { setVal('vMgrName', i.n); setVal('vMgrPhone', i.p); setVal('vMgrEmail', i.e); } 
+  else if (type === 'tpls') {
+    setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp); setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarVIN', i.cvin); setVal('vCarColor', i.ccol);
+    setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn); setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
+    
+    if(i.crTerm) setVal('creditTerm', i.crTerm);
+    if(i.crRate) setVal('creditRate', i.crRate);
+    if(i.crRub) setVal('creditInitialRub', i.crRub);
+    if($('showCreditInKP')) $('showCreditInKP').checked = i.crCheck || false;
+
+    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+    if (i.dops && Array.isArray(i.dops)) {
+      let needsReRender = false;
+      i.dops.forEach(d => { if (!document.getElementById(d.id) && d.id.startsWith('cdop_')) { db.customDops.push({ id: d.id, name: d.name || 'Опция', price: d.price }); needsReRender = true; } });
+      if(needsReRender) { saveDB(); renderDopsUI(); }
+      i.dops.forEach(d => { let cb = document.getElementById(d.id); let pr = document.getElementById(d.id + '_price'); if (cb) cb.checked = true; if (pr) pr.value = d.price; });
+    }
+    ['vPriceOld', 'vPriceNew'].forEach(id => { let el = $(id); if(el && el.value) formatInputNumber(el); });
+    calculateCredit('rub');
+  }
+  switchTab('tab-data', document.querySelector('.tab')); renderKP(); showToast("✅ Данные загружены!");
+}
+
+function delItem(type, idx) { if (confirm('Удалить навсегда?')) { db[type].splice(idx, 1); saveDB(); renderLists(); } }
+
+function renderLists() {
+  const lm = $('list-mgrs'); if (lm && db.mgrs) lm.innerHTML = db.mgrs.map((m, i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
   const lt = $('list-tpls'); if (lt && db.tpls) lt.innerHTML = db.tpls.map((t, i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
@@ -668,7 +831,7 @@ function downloadImage() {
 try {
   populateBrandList(); renderDopsUI(); renderLists(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin(); calculateCredit('price');
 } catch (error) {
-  console.error(error); localStorage.removeItem('kp_db_v24'); alert("Сброс кэша. Обновите страницу."); location.reload();
+  console.error("Initialization error:", error);
 }
 
 loadCatalogFromGoogle();

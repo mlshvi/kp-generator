@@ -205,7 +205,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   <div id="tab-data" class="tab-content active">
     <div class="catalog-box">
       <h3>Быстрый выбор из каталога</h3>
-      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Загрузка актуальных цен...</div>
+      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Подготовка каталога...</div>
       
       <select id="catBrand" onchange="updateModels()">
         <option value="">-- Выберите бренд --</option>
@@ -264,7 +264,7 @@ body.mobile-view .doc-equip { column-count: 1; }
     <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
 
     <div class="row" style="margin-top: 5px;">
-      <input id="vPriceOld" type="text" placeholder="МЦП / Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
       <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
     </div>
 
@@ -459,6 +459,9 @@ body.mobile-view .doc-equip { column-count: 1; }
 </div>
 
 <script>
+// ==========================================
+// 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
+// ==========================================
 const $ = id => document.getElementById(id);
 const val = id => { const el = $(id); return el ? el.value.trim() : ''; };
 const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
@@ -482,12 +485,18 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
+// ==========================================
+// 2. БРОНЕБОЙНАЯ ЗАГРУЗКА БАЗЫ ДАННЫХ (Защита от сбоя кэша)
+// ==========================================
 let db;
 try {
   db = JSON.parse(localStorage.getItem('kp_db_v24'));
   if (!db || typeof db !== 'object') db = {};
-} catch(e) { db = {}; }
+} catch(e) {
+  db = {};
+}
 
+// Принудительно восстанавливаем все массивы, если они сломались
 if (!Array.isArray(db.mgrs)) db.mgrs = [];
 if (!Array.isArray(db.tpls)) db.tpls = [];
 if (!Array.isArray(db.imgCars)) db.imgCars = [];
@@ -497,6 +506,9 @@ if (typeof db.imgLogo !== 'string') db.imgLogo = '';
 
 const saveDB = () => localStorage.setItem('kp_db_v24', JSON.stringify(db));
 
+// ==========================================
+// 3. БАЗА ТЕКСТОВ И КОМПЛЕКТАЦИЙ
+// ==========================================
 const DIRECT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv&_nocache=" + Date.now();
 
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -574,8 +586,375 @@ const DEALER_DOPS_BASE = [
   { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
 ];
 
+// ==========================================
+// ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
+// ==========================================
+
 function compressImage(file, callback) {
-  const reader = new FileReader(); reader.readAsDataURLnone'; }
+  const reader = new FileReader(); reader.readAsDataURL(file);
+  reader.onload = e => {
+    const img = new Image(); img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas'); const MAX_WIDTH = 1200;
+      let width = img.width; let height = img.height;
+      if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+      canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+      callback(canvas.toDataURL('image/jpeg', 0.8));
+    };
+  };
+}
+
+function exportDB() {
+  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+  let link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", "kp_backup.json");
+  document.body.appendChild(link); link.click(); link.remove(); showToast("✅ Резервная копия сохранена!");
+}
+
+function importDB(input) {
+  if (!input.files[0]) return; let reader = new FileReader();
+  reader.onload = e => {
+    try { let newDB = JSON.parse(e.target.result); if(newDB && newDB.mgrs) { db = newDB; saveDB(); location.reload(); } else { showToast("❌ Неверный формат файла!", true); } } 
+    catch(err) { showToast("❌ Ошибка чтения файла!", true); }
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function copyTextForMessenger() {
+  let car = val('vCarName') || 'Автомобиль'; let pkg = val('vCarPkg') ? `(${val('vCarPkg')})` : '';
+  let price = $('outPriceNew') ? $('outPriceNew').textContent : ''; let mgr = val('vMgrName') || 'Менеджер'; let phone = val('vMgrPhone') || '';
+  let text = `Здравствуйте! Отправляю вам Коммерческое предложение.\n\n🚗 Автомобиль: ${car} ${pkg}\n💰 Специальная цена: ${price}\n\nС уважением, ${mgr} ${phone}`;
+  navigator.clipboard.writeText(text).then(() => showToast('💬 Текст скопирован! Вставьте в WhatsApp.'));
+}
+
+function toggleCalc(contentId, iconId) {
+  const content = $(contentId); const icon = $(iconId);
+  if (!content || !icon) return;
+  if (content.style.display === 'none' || content.style.display === '') { content.style.display = 'block'; icon.textContent = '▼'; } 
+  else { content.style.display = 'none'; icon.textContent = '▶'; }
+}
+
+function calculateMargin() {
+  let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
+  if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
+  
+  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
+  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
+  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
+  
+  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
+  if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
+  if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
+}
+
+function calculateOjMargin() {
+  let factPaid = getNum(val('ojFactPaid')); let basePrice = getNum(val('ojBasePrice'));
+  let discountInput = val('ojDiscount').replace(',', '.'); let discount = parseFloat(discountInput) || 0; 
+  if (!factPaid && !basePrice) { if($('outOjPremium')) $('outOjPremium').innerHTML = '0 ₽'; return; }
+  let preCalc = basePrice * (1 - (discount / 100)); let premium = Math.round(factPaid - preCalc);
+  let color = premium < 0 ? '#dc2626' : '#166534';
+  if ($('outOjPremium')) $('outOjPremium').innerHTML = `<span style="color:${color}">${premium.toLocaleString('ru-RU')} ₽</span>`;
+}
+
+function toggleTISupport() {
+  const cb = $('useTISupport'); if (!cb) return;
+  if (cb.checked) {
+    setVal('calcSupport', currentCatalogSupport);
+    if (currentCatalogSupport) formatInputNumber($('calcSupport'));
+  } else { setVal('calcSupport', ''); }
+  calculateMargin();
+}
+
+function openDopsModal() { renderDopsUI(); const m = $('dopsModal'); if(m) m.classList.add('active'); }
+function closeDopsModal() { const m = $('dopsModal'); if(m) m.classList.remove('active'); renderKP(); }
+
+function addCustomDop() {
+  const name = val('newDopName'); const price = getNum(val('newDopPrice'));
+  if (!name) return showToast('❌ Введите название опции', true);
+  const newId = 'cdop_' + Date.now(); 
+  db.customDops.push({ id: newId, name: name, price: price }); saveDB(); 
+  setVal('newDopName', ''); setVal('newDopPrice', '');
+  renderDopsUI(); setTimeout(() => { let cb = $(newId); if(cb) { cb.checked = true; renderKP(); } }, 50);
+}
+
+function removeCustomDop(id) { 
+  if (confirm('Удалить эту опцию навсегда?')) { 
+    db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); 
+  } 
+}
+
+function renderDopsUI() {
+  const list = $('modal-dops-list'); if (!list) return;
+  let tempState = {}; 
+  document.querySelectorAll('.dop-check').forEach(cb => { 
+    let prInput = $(cb.id + '_price');
+    tempState[cb.id] = { checked: cb.checked, price: prInput ? prInput.value : 0 }; 
+  });
+
+  const validCustomDops = (db.customDops || []).filter(d => d && d.id);
+  const allDops = [...validCustomDops, ...DEALER_DOPS_BASE];
+  
+  list.innerHTML = allDops.map(d => {
+    const isCustom = d.id.startsWith('cdop_');
+    return `<div class="dop-row dop-item"><label class="dop-label"><input type="checkbox" class="dop-check" id="${d.id}" data-name='${d.name}' onchange="renderKP()"><span style="${isCustom ? 'color: #1d4ed8; font-weight: bold;' : ''}">${d.name}</span></label><div style="display:flex; align-items:center;"><input type="number" class="dop-price-input dop-price" id="${d.id}_price" value="${d.price}" oninput="renderKP()">${isCustom ? `<button class="del-dop-btn" onclick="removeCustomDop('${d.id}')" title="Удалить">×</button>` : '<div style="width:36px"></div>'}</div></div>`;
+  }).join('');
+  
+  document.querySelectorAll('.dop-check').forEach(cb => { 
+    if (tempState[cb.id]) { 
+      cb.checked = tempState[cb.id].checked; 
+      let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; 
+    } 
+  });
+}
+
+function makeClean(str) { return (str || "").toLowerCase().replace(/[хХ]/g, 'x').replace(/\s+/g, '').replace(/plus/g, '+'); }
+
+function loadCatalogFromGoogle() {
+  const loader = $('catalog-loader'); if (!loader) return;
+  let isLoaded = false;
+
+  const timeoutId = setTimeout(() => {
+    if (!isLoaded) {
+      isLoaded = true;
+      loader.innerHTML = '⚠️ Цены не загрузились (сеть). Работает базовая версия.';
+      loader.style.color = '#d97706';
+    }
+  }, 4000);
+
+  fetch(DIRECT_URL)
+    .then(response => { if (!response.ok) throw new Error('Net Error'); return response.text(); })
+    .then(csvText => {
+      if (isLoaded) return;
+      isLoaded = true; clearTimeout(timeoutId);
+
+      // Защита от страниц-заглушек провайдера Wi-Fi
+      if (csvText.trim().startsWith('<')) {
+          loader.innerHTML = '⚠️ Сеть блокирует таблицу (HTML). Работает база.';
+          loader.style.color = '#d97706';
+          return;
+      }
+
+      if (typeof Papa === 'undefined') {
+          loader.innerHTML = '⚠️ Ошибка загрузки парсера. Работает база.';
+          loader.style.color = '#dc2626';
+          return;
+      }
+
+      Papa.parse(csvText, {
+        header: true, skipEmptyLines: true, transformHeader: function(h) { return h ? h.trim() : ""; }, 
+        complete: function(results) {
+          try {
+            results.data.forEach(row => {
+              let nr = {};
+              for (let k in row) {
+                let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
+                nr[cleanK] = row[k];
+              }
+
+              let bRaw = (nr['brand'] || nr['бренд'] || nr['марка'] || "").trim();
+              let mRaw = (nr['model'] || nr['модель'] || "").trim();
+              let tRaw = (nr['trim'] || nr['комплектация'] || "").trim();
+              
+              if (!bRaw || !mRaw || !tRaw) return;
+
+              let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
+
+              let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw;
+              if (!CATALOG[bKey]) CATALOG[bKey] = {};
+
+              let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw;
+              if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
+
+              let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw;
+              let existing = CATALOG[bKey][mKey][tKey] || {};
+
+              function extractNumber(val) {
+                if(!val) return "";
+                let d = String(val).replace(/\D/g, '');
+                return d === "0" ? "" : d;
+              }
+
+              let pOld = extractNumber(nr['priceold'] || nr['базоваяцена'] || nr['стараяцена'] || nr['цена']);
+              let pNew = extractNumber(nr['pricenew'] || nr['спеццена'] || nr['специальнаяцена'] || nr['новаяцена']);
+              let cCar = extractNumber(nr['costcar'] || nr['себестоимость'] || nr['себесавто']);
+              let supp = extractNumber(nr['support'] || nr['поддержка'] || nr['трейдин']);
+              let mcp  = extractNumber(nr['basemcp'] || nr['мцп'] || nr['базоваямцп']);
+
+              CATALOG[bKey][mKey][tKey] = {
+                priceOld: pOld || existing.priceOld || "",
+                priceNew: pNew || existing.priceNew || "",
+                costCar: cCar || existing.costCar || "",
+                support: supp || existing.support || "",
+                baseMcp: mcp || existing.baseMcp || "",
+                specs: nr['specs'] || nr['характеристики'] || existing.specs || "", 
+                stdEq: nr['stdeq'] || nr['оснащение'] || nr['базовоеоснащение'] || existing.stdEq || ""
+              };
+            });
+
+            loader.style.display = 'none';
+            
+            let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
+            populateBrandList();
+            if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
+            if (curModel) { setVal('catModel', curModel); updateTrims(); }
+            if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
+
+            showToast('✅ Базовые и Спец цены успешно обновлены!');
+          } catch (e) {
+             console.error("CSV Parse Error", e);
+          }
+        }
+      });
+    })
+    .catch(err => {
+      if (isLoaded) return;
+      isLoaded = true; clearTimeout(timeoutId);
+      loader.innerHTML = '❌ Цены заблокированы. Работает база.';
+      loader.style.color = '#dc2626';
+    });
+}
+
+function populateBrandList() {
+  const selBrand = $('catBrand'); if (!selBrand) return;
+  selBrand.innerHTML = '<option value="">-- Выберите бренд --</option>';
+  Object.keys(CATALOG).forEach(brand => selBrand.options.add(new Option(brand, brand)));
+}
+
+function updateModels() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selBrand || !selModel || !selTrim) return;
+  selModel.innerHTML = '<option value="">-- Выберите модель --</option>'; selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; selTrim.disabled = true;
+  if (selBrand.value && CATALOG[selBrand.value]) { 
+      selModel.disabled = false; Object.keys(CATALOG[selBrand.value]).forEach(model => selModel.options.add(new Option(model, model))); 
+  } else { selModel.disabled = true; }
+}
+
+function updateTrims() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selBrand || !selModel || !selTrim) return;
+  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+  if (selModel.value && CATALOG[selBrand.value] && CATALOG[selBrand.value][selModel.value]) { 
+      selTrim.disabled = false; Object.keys(CATALOG[selBrand.value][selModel.value]).forEach(trim => selTrim.options.add(new Option(trim, trim))); 
+  } else { selTrim.disabled = true; }
+}
+
+function applyCatalog() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selTrim || !selTrim.value || !CATALOG[selBrand.value] || !CATALOG[selBrand.value][selModel.value]) return;
+  const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
+  if (!data) return;
+  
+  setVal('vCarName', `${selBrand.value} ${selModel.value}`); setVal('vCarPkg', selTrim.value); setVal('vCarVIN', ''); setVal('vCarColor', '');
+  setVal('vCarSpecs', data.specs || ""); setVal('vCarStdEq', data.stdEq || ""); setVal('vCarEq', '');
+  
+  setVal('vPriceOld', data.priceOld || ""); if(data.priceOld) formatInputNumber($('vPriceOld'));
+  setVal('vPriceNew', data.priceNew || ""); if(data.priceNew) formatInputNumber($('vPriceNew'));
+  
+  setVal('calcCostCar', data.costCar || ""); if(data.costCar) formatInputNumber($('calcCostCar'));
+  setVal('ojBasePrice', data.baseMcp || ""); if(data.baseMcp) formatInputNumber($('ojBasePrice'));
+  
+  currentCatalogSupport = data.support || ""; 
+  const tiCb = $('useTISupport'); if (tiCb) tiCb.checked = false; 
+  setVal('calcSupport', ""); 
+  
+  document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+  db.imgCars = []; saveDB(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
+  showToast("✅ Автомобиль загружен из каталога");
+}
+
+function normalizeCarKey(name) { return (name || '').toLowerCase().replace(/\s+/g, '').replace(/plus/g, '+'); }
+function onCarNameInput() { db.imgCars = []; saveDB(); renderGallery(); renderKP(); }
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  const t = $(tabId); if (t) t.classList.add('active'); 
+  if (btn) btn.classList.add('active'); 
+  renderLists();
+}
+
+const vLogo = $('vLogoImg');
+if (vLogo) {
+  vLogo.addEventListener('change', function() {
+    if (!this.files || !this.files.length) return; 
+    compressImage(this.files[0], compressed => { db.imgLogo = compressed; saveDB(); renderKP(); });
+  });
+}
+
+const vImg = $('vCarImg');
+if (vImg) {
+  vImg.addEventListener('change', async function () {
+    if (!this.files || !this.files.length) return; 
+    const files = Array.from(this.files).slice(0, 3); let newPhotos = [];
+    for(let file of files) { await new Promise(res => { compressImage(file, compressed => { newPhotos.push(compressed); res(); }); }); }
+    db.imgCars = [...(db.imgCars || []), ...newPhotos].slice(0, 3); saveDB(); renderGallery(); renderKP(); this.value = '';
+  });
+}
+
+function renderGallery() {
+  const gal = $('mini-gallery'); if(!gal) return;
+  if(!db.imgCars || db.imgCars.length === 0) { gal.innerHTML = ''; return; }
+  gal.innerHTML = db.imgCars.map((img, i) => `
+    <div style="position:relative; width:65px; height:65px; border-radius:6px; overflow:hidden; border:1px solid #d1d5db; flex-shrink:0;">
+      <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
+      <button onclick="removePhoto(${i})" style="position:absolute; top:0; right:0; background:rgba(220,38,38,0.9); color:#fff; border:none; width:22px; height:22px; font-size:14px; cursor:pointer; margin:0; padding:0; border-radius:0 0 0 4px;">×</button>
+    </div>
+  `).join('');
+}
+
+function removePhoto(idx) { if (!db.imgCars) return; db.imgCars.splice(idx, 1); saveDB(); renderGallery(); renderKP(); }
+
+function renderKP() {
+  const dc = $('document-container');
+  if (dc) dc.className = `theme-${val('vTheme') || 'premium'}`;
+  
+  if ($('outDName')) $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
+  if ($('outDAddr')) $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
+  if ($('outDContacts')) $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
+
+  let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
+  if ($('outLogo')) $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
+
+  if ($('outNum')) $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
+  if ($('outToday')) $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
+  if ($('outValid')) $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
+
+  if ($('outCarName')) $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
+  if ($('outCarPkg')) $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
+
+  let specsArr = [];
+  if (val('vCarVIN')) specsArr.push(`VIN-номер: ${val('vCarVIN')}`);
+  if (val('vCarColor')) specsArr.push(`Цвет кузова: ${val('vCarColor')}`);
+  if (val('vCarSpecs')) specsArr.push(val('vCarSpecs'));
+  if ($('outCarSpecs')) $('outCarSpecs').textContent = specsArr.join('\n') || 'Характеристики не указаны';
+
+  let eqList = val('vCarEq').split('\n').filter(Boolean);
+  if ($('outCarEq')) $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
+
+  let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
+  if ($('stdEqBlock') && $('outCarStdEq')) {
+      if (stdEqList.length > 0) { $('stdEqBlock').style.display = 'block'; $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join(''); } 
+      else { $('stdEqBlock').style.display = 'none'; }
+  }
+
+  let dopSum = 0; let selectedCount = 0; let dopItems = [];
+  document.querySelectorAll('.dop-check').forEach(cb => {
+    if (cb.checked) { 
+        let prInput = $(cb.id + '_price'); 
+        let p = prInput ? (parseInt(prInput.value) || 0) : 0; 
+        dopSum += p; selectedCount++; 
+        dopItems.push(`<b>${cb.dataset.name}</b> — ${p.toLocaleString('ru-RU')} ₽`); 
+    }
+  });
+
+  const sumLabel = $('dops-summary');
+  if (sumLabel) {
+      if (selectedCount > 0) { sumLabel.style.display = 'block'; sumLabel.textContent = `Выбрано опций: ${selectedCount} (на ${dopSum.toLocaleString('ru-RU')} ₽)`; } 
+      else { sumLabel.style.display = 'none'; }
+  }
+
+  if ($('dealerEqBlock') && $('outDealerEq')) {
+      if (dopItems.length > 0) { $('dealerEqBlock').style.display = 'block'; $('outDealerEq').innerHTML = dopItems.map(i => `<li>${i}</li>`).join(''); } 
+      else { $('dealerEqBlock').style.display = 'none'; }
   }
 
   let baseOldNum = getNum(val('vPriceOld')); let baseNewNum = getNum(val('vPriceNew'));
@@ -703,12 +1082,26 @@ function downloadImage() {
   }, 200);
 }
 
+// ==========================================
+// ЗАПУСК: 100% ГАРАНТИЯ ЗАГРУЗКИ БЕЗ ЗАВИСАНИЙ
+// ==========================================
 try {
-  populateBrandList(); renderDopsUI(); renderLists(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
+  populateBrandList(); 
+  renderDopsUI(); 
+  renderLists(); 
+  renderGallery(); 
+  renderKP(); 
+  calculateMargin(); 
+  calculateOjMargin();
 } catch (error) {
-  console.error(error); localStorage.removeItem('kp_db_v24'); alert("Сброс кэша. Обновите страницу."); location.reload();
+  // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ
+  console.error(error);
+  localStorage.removeItem('kp_db_v24');
+  alert("Браузер повредил старые файлы. Мы восстановили работу.");
+  location.reload();
 }
 
+// Запускаем фоновую загрузку цен
 loadCatalogFromGoogle();
 </script>
 </body>

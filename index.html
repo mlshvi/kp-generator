@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- Загружаем библиотеки асинхронно (defer), чтобы они НИКОГДА не блокировали и не вешали страницу -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -205,7 +205,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   <div id="tab-data" class="tab-content active">
     <div class="catalog-box">
       <h3>Быстрый выбор из каталога</h3>
-      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Подготовка каталога...</div>
+      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Загрузка актуальных цен...</div>
       
       <select id="catBrand" onchange="updateModels()">
         <option value="">-- Выберите бренд --</option>
@@ -264,7 +264,7 @@ body.mobile-view .doc-equip { column-count: 1; }
     <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
 
     <div class="row" style="margin-top: 5px;">
-      <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceOld" type="text" placeholder="МЦП / Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
       <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
     </div>
 
@@ -459,9 +459,6 @@ body.mobile-view .doc-equip { column-count: 1; }
 </div>
 
 <script>
-// ==========================================
-// 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
-// ==========================================
 const $ = id => document.getElementById(id);
 const val = id => { const el = $(id); return el ? el.value.trim() : ''; };
 const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
@@ -485,18 +482,12 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
-// ==========================================
-// 2. БРОНЕБОЙНАЯ ЗАГРУЗКА БАЗЫ ДАННЫХ (Защита от сбоя кэша)
-// ==========================================
 let db;
 try {
   db = JSON.parse(localStorage.getItem('kp_db_v24'));
   if (!db || typeof db !== 'object') db = {};
-} catch(e) {
-  db = {};
-}
+} catch(e) { db = {}; }
 
-// Принудительно восстанавливаем все массивы, если они сломались
 if (!Array.isArray(db.mgrs)) db.mgrs = [];
 if (!Array.isArray(db.tpls)) db.tpls = [];
 if (!Array.isArray(db.imgCars)) db.imgCars = [];
@@ -506,9 +497,6 @@ if (typeof db.imgLogo !== 'string') db.imgLogo = '';
 
 const saveDB = () => localStorage.setItem('kp_db_v24', JSON.stringify(db));
 
-// ==========================================
-// 3. БАЗА ТЕКСТОВ И КОМПЛЕКТАЦИЙ
-// ==========================================
 const DIRECT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv&_nocache=" + Date.now();
 
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -586,10 +574,6 @@ const DEALER_DOPS_BASE = [
   { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
 ];
 
-// ==========================================
-// ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
-// ==========================================
-
 function compressImage(file, callback) {
   const reader = new FileReader(); reader.readAsDataURL(file);
   reader.onload = e => {
@@ -602,21 +586,6 @@ function compressImage(file, callback) {
       callback(canvas.toDataURL('image/jpeg', 0.8));
     };
   };
-}
-
-function exportDB() {
-  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-  let link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", "kp_backup.json");
-  document.body.appendChild(link); link.click(); link.remove(); showToast("✅ Резервная копия сохранена!");
-}
-
-function importDB(input) {
-  if (!input.files[0]) return; let reader = new FileReader();
-  reader.onload = e => {
-    try { let newDB = JSON.parse(e.target.result); if(newDB && newDB.mgrs) { db = newDB; saveDB(); location.reload(); } else { showToast("❌ Неверный формат файла!", true); } } 
-    catch(err) { showToast("❌ Ошибка чтения файла!", true); }
-  };
-  reader.readAsText(input.files[0]);
 }
 
 function copyTextForMessenger() {
@@ -636,11 +605,9 @@ function toggleCalc(contentId, iconId) {
 function calculateMargin() {
   let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
   if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
-  
   let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
   let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
   let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
-  
   let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
   if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
   if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
@@ -677,9 +644,7 @@ function addCustomDop() {
 }
 
 function removeCustomDop(id) { 
-  if (confirm('Удалить эту опцию навсегда?')) { 
-    db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); 
-  } 
+  if (confirm('Удалить эту опцию навсегда?')) { db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); } 
 }
 
 function renderDopsUI() {
@@ -689,127 +654,120 @@ function renderDopsUI() {
     let prInput = $(cb.id + '_price');
     tempState[cb.id] = { checked: cb.checked, price: prInput ? prInput.value : 0 }; 
   });
-
   const validCustomDops = (db.customDops || []).filter(d => d && d.id);
   const allDops = [...validCustomDops, ...DEALER_DOPS_BASE];
-  
   list.innerHTML = allDops.map(d => {
     const isCustom = d.id.startsWith('cdop_');
     return `<div class="dop-row dop-item"><label class="dop-label"><input type="checkbox" class="dop-check" id="${d.id}" data-name='${d.name}' onchange="renderKP()"><span style="${isCustom ? 'color: #1d4ed8; font-weight: bold;' : ''}">${d.name}</span></label><div style="display:flex; align-items:center;"><input type="number" class="dop-price-input dop-price" id="${d.id}_price" value="${d.price}" oninput="renderKP()">${isCustom ? `<button class="del-dop-btn" onclick="removeCustomDop('${d.id}')" title="Удалить">×</button>` : '<div style="width:36px"></div>'}</div></div>`;
   }).join('');
-  
   document.querySelectorAll('.dop-check').forEach(cb => { 
-    if (tempState[cb.id]) { 
-      cb.checked = tempState[cb.id].checked; 
-      let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; 
-    } 
+    if (tempState[cb.id]) { cb.checked = tempState[cb.id].checked; let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; } 
   });
 }
 
 function makeClean(str) { return (str || "").toLowerCase().replace(/[хХ]/g, 'x').replace(/\s+/g, '').replace(/plus/g, '+'); }
 
+// ВНУТРЕННИЙ ПАРСЕР ТАБЛИЦ (БЕЗ ЗАВИСИМОСТЕЙ ОТ ИНТЕРНЕТА)
+function parseCSV(csv) {
+  let rows = []; let row = []; let cur = ''; let inQuote = false;
+  for (let i = 0; i < csv.length; i++) {
+    let char = csv[i];
+    if (inQuote) {
+      if (char === '"') {
+        if (csv[i+1] === '"') { cur += '"'; i++; } else { inQuote = false; }
+      } else { cur += char; }
+    } else {
+      if (char === '"') { inQuote = true; }
+      else if (char === ',') { row.push(cur); cur = ''; }
+      else if (char === '\n' || char === '\r') {
+        row.push(cur); rows.push(row); row = []; cur = '';
+        if (char === '\r' && csv[i+1] === '\n') i++;
+      } else { cur += char; }
+    }
+  }
+  row.push(cur); rows.push(row);
+  let headers = rows[0].map(h => h.trim().toLowerCase());
+  let data = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i].length === 1 && rows[i][0].trim() === '') continue;
+    let obj = {};
+    for (let j = 0; j < headers.length; j++) { obj[headers[j]] = rows[i][j] ? rows[i][j].trim() : ''; }
+    data.push(obj);
+  }
+  return data;
+}
+
 function loadCatalogFromGoogle() {
   const loader = $('catalog-loader'); if (!loader) return;
-  let isLoaded = false;
-
-  const timeoutId = setTimeout(() => {
-    if (!isLoaded) {
-      isLoaded = true;
-      loader.innerHTML = '⚠️ Цены не загрузились (сеть). Работает базовая версия.';
-      loader.style.color = '#d97706';
-    }
-  }, 4000);
-
   fetch(DIRECT_URL)
     .then(response => { if (!response.ok) throw new Error('Net Error'); return response.text(); })
     .then(csvText => {
-      if (isLoaded) return;
-      isLoaded = true; clearTimeout(timeoutId);
-
-      // Защита от страниц-заглушек провайдера Wi-Fi
-      if (csvText.trim().startsWith('<')) {
-          loader.innerHTML = '⚠️ Сеть блокирует таблицу (HTML). Работает база.';
-          loader.style.color = '#d97706';
-          return;
-      }
-
-      if (typeof Papa === 'undefined') {
-          loader.innerHTML = '⚠️ Ошибка загрузки парсера. Работает база.';
-          loader.style.color = '#dc2626';
-          return;
-      }
-
-      Papa.parse(csvText, {
-        header: true, skipEmptyLines: true, transformHeader: function(h) { return h ? h.trim() : ""; }, 
-        complete: function(results) {
-          try {
-            results.data.forEach(row => {
-              let nr = {};
-              for (let k in row) {
-                let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
-                nr[cleanK] = row[k];
-              }
-
-              let bRaw = (nr['brand'] || nr['бренд'] || nr['марка'] || "").trim();
-              let mRaw = (nr['model'] || nr['модель'] || "").trim();
-              let tRaw = (nr['trim'] || nr['комплектация'] || "").trim();
-              
-              if (!bRaw || !mRaw || !tRaw) return;
-
-              let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
-
-              let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw;
-              if (!CATALOG[bKey]) CATALOG[bKey] = {};
-
-              let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw;
-              if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
-
-              let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw;
-              let existing = CATALOG[bKey][mKey][tKey] || {};
-
-              function extractNumber(val) {
-                if(!val) return "";
-                let d = String(val).replace(/\D/g, '');
-                return d === "0" ? "" : d;
-              }
-
-              let pOld = extractNumber(nr['priceold'] || nr['базоваяцена'] || nr['стараяцена'] || nr['цена']);
-              let pNew = extractNumber(nr['pricenew'] || nr['спеццена'] || nr['специальнаяцена'] || nr['новаяцена']);
-              let cCar = extractNumber(nr['costcar'] || nr['себестоимость'] || nr['себесавто']);
-              let supp = extractNumber(nr['support'] || nr['поддержка'] || nr['трейдин']);
-              let mcp  = extractNumber(nr['basemcp'] || nr['мцп'] || nr['базоваямцп']);
-
-              CATALOG[bKey][mKey][tKey] = {
-                priceOld: pOld || existing.priceOld || "",
-                priceNew: pNew || existing.priceNew || "",
-                costCar: cCar || existing.costCar || "",
-                support: supp || existing.support || "",
-                baseMcp: mcp || existing.baseMcp || "",
-                specs: nr['specs'] || nr['характеристики'] || existing.specs || "", 
-                stdEq: nr['stdeq'] || nr['оснащение'] || nr['базовоеоснащение'] || existing.stdEq || ""
-              };
-            });
-
-            loader.style.display = 'none';
-            
-            let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
-            populateBrandList();
-            if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
-            if (curModel) { setVal('catModel', curModel); updateTrims(); }
-            if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
-
-            showToast('✅ Базовые и Спец цены успешно обновлены!');
-          } catch (e) {
-             console.error("CSV Parse Error", e);
+      if (csvText.trim().startsWith('<')) { loader.innerHTML = '⚠️ Сеть блокирует таблицу. Работает базовая версия.'; loader.style.color = '#d97706'; return; }
+      try {
+        let parsedData = parseCSV(csvText);
+        parsedData.forEach(row => {
+          let nr = {};
+          for (let k in row) {
+            let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
+            nr[cleanK] = row[k];
           }
-        }
-      });
+
+          function parsePrice(val) {
+              if (!val) return "";
+              let str = String(val).replace(/\s+/g, '').replace(/₽/g, '').replace(/руб/gi, '');
+              str = str.replace(/[,.]\d{1,2}$/, ''); 
+              let digits = str.replace(/\D/g, ''); 
+              return (digits && digits !== "0") ? digits : "";
+          }
+
+          function findValue(keywords) {
+              for (let f of keywords) {
+                  for (let k in nr) { if (k === f || k.includes(f)) { let val = parsePrice(nr[k]); if (val) return val; } }
+              } return "";
+          }
+
+          function findText(keywords) {
+              for (let f of keywords) {
+                  for (let k in nr) { if (k === f || k.includes(f)) { if (nr[k] && String(nr[k]).trim() !== "") return String(nr[k]).trim(); } }
+              } return "";
+          }
+
+          let bRaw = findText(['brand', 'бренд', 'марка']);
+          let mRaw = findText(['model', 'модель']);
+          let tRaw = findText(['trim', 'комплектация']);
+          if (!bRaw || !mRaw || !tRaw) return;
+
+          let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
+          let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw; if (!CATALOG[bKey]) CATALOG[bKey] = {};
+          let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw; if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
+          let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw; let existing = CATALOG[bKey][mKey][tKey] || {};
+
+          let pOld = findValue(['priceold', 'мцп', 'мпц', 'базовая', 'старая', 'прайс', 'розничная']);
+          let pNew = findValue(['pricenew', 'спец', 'скидк', 'новая', 'финал']);
+          let cCar = findValue(['costcar', 'себес', 'закуп']);
+          let supp = findValue(['support', 'поддерж', 'трейд']);
+          let mcp  = findValue(['basemcp', 'мцпюр']) || pOld; 
+
+          CATALOG[bKey][mKey][tKey] = {
+            priceOld: pOld || existing.priceOld || "", priceNew: pNew || existing.priceNew || "",
+            costCar: cCar || existing.costCar || "", support: supp || existing.support || "", baseMcp: mcp || existing.baseMcp || "",
+            specs: findText(['specs', 'характеристики']) || existing.specs || "", stdEq: findText(['stdeq', 'оснащение', 'базовое']) || existing.stdEq || ""
+          };
+        });
+
+        loader.style.display = 'none';
+        let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
+        populateBrandList();
+        if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
+        if (curModel) { setVal('catModel', curModel); updateTrims(); }
+        if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
+
+      } catch (e) {
+         loader.innerHTML = '⚠️ Ошибка структуры таблицы. Работает базовая версия.'; loader.style.color = '#d97706';
+      }
     })
     .catch(err => {
-      if (isLoaded) return;
-      isLoaded = true; clearTimeout(timeoutId);
-      loader.innerHTML = '❌ Цены заблокированы. Работает база.';
-      loader.style.color = '#dc2626';
+      loader.innerHTML = '❌ Нет подключения к таблице. Работает оффлайн база.'; loader.style.color = '#dc2626';
     });
 }
 
@@ -1044,6 +1002,9 @@ function renderLists() {
 }
 
 function downloadPDF() {
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    return showToast('⏳ Подождите секунду, загружается модуль для PDF...', true);
+  }
   const btn = $('btn-pdf'); if (!btn) return;
   const originalText = btn.textContent; btn.textContent = '⏳ Делаем PDF...'; btn.disabled = true;
   const element = $('document-container'); const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
@@ -1065,6 +1026,7 @@ function downloadPDF() {
 }
 
 function downloadImage() {
+  if (typeof html2canvas === 'undefined') return showToast('⏳ Подождите секунду, загружается модуль для фото...', true);
   const btn = $('btn-img'); if (!btn) return;
   const originalText = btn.textContent; btn.textContent = '⏳ Делаем фото...'; btn.disabled = true;
   const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
@@ -1082,26 +1044,12 @@ function downloadImage() {
   }, 200);
 }
 
-// ==========================================
-// ЗАПУСК: 100% ГАРАНТИЯ ЗАГРУЗКИ БЕЗ ЗАВИСАНИЙ
-// ==========================================
 try {
-  populateBrandList(); 
-  renderDopsUI(); 
-  renderLists(); 
-  renderGallery(); 
-  renderKP(); 
-  calculateMargin(); 
-  calculateOjMargin();
+  populateBrandList(); renderDopsUI(); renderLists(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
 } catch (error) {
-  // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ
-  console.error(error);
-  localStorage.removeItem('kp_db_v24');
-  alert("Браузер повредил старые файлы. Мы восстановили работу.");
-  location.reload();
+  console.error(error); localStorage.removeItem('kp_db_v24'); alert("Сброс кэша. Обновите страницу."); location.reload();
 }
 
-// Запускаем фоновую загрузку цен
 loadCatalogFromGoogle();
 </script>
 </body>

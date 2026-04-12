@@ -205,7 +205,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   <div id="tab-data" class="tab-content active">
     <div class="catalog-box">
       <h3>Быстрый выбор из каталога</h3>
-      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Подготовка каталога...</div>
+      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Загрузка актуальных цен...</div>
       
       <select id="catBrand" onchange="updateModels()">
         <option value="">-- Выберите бренд --</option>
@@ -264,7 +264,7 @@ body.mobile-view .doc-equip { column-count: 1; }
     <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
 
     <div class="row" style="margin-top: 5px;">
-      <input id="vPriceOld" type="text" placeholder="МЦП (Базовая цена)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceOld" type="text" placeholder="МЦП / Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
       <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
     </div>
 
@@ -459,9 +459,6 @@ body.mobile-view .doc-equip { column-count: 1; }
 </div>
 
 <script>
-// ==========================================
-// 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
-// ==========================================
 const $ = id => document.getElementById(id);
 const val = id => { const el = $(id); return el ? el.value.trim() : ''; };
 const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
@@ -485,18 +482,12 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
-// ==========================================
-// 2. БРОНЕБОЙНАЯ ЗАГРУЗКА БАЗЫ ДАННЫХ (Защита от сбоя кэша)
-// ==========================================
 let db;
 try {
   db = JSON.parse(localStorage.getItem('kp_db_v24'));
   if (!db || typeof db !== 'object') db = {};
-} catch(e) {
-  db = {};
-}
+} catch(e) { db = {}; }
 
-// Принудительно восстанавливаем все массивы, если они сломались
 if (!Array.isArray(db.mgrs)) db.mgrs = [];
 if (!Array.isArray(db.tpls)) db.tpls = [];
 if (!Array.isArray(db.imgCars)) db.imgCars = [];
@@ -506,9 +497,6 @@ if (typeof db.imgLogo !== 'string') db.imgLogo = '';
 
 const saveDB = () => localStorage.setItem('kp_db_v24', JSON.stringify(db));
 
-// ==========================================
-// 3. БАЗА ТЕКСТОВ И КОМПЛЕКТАЦИЙ
-// ==========================================
 const DIRECT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv&_nocache=" + Date.now();
 
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -585,10 +573,6 @@ const DEALER_DOPS_BASE = [
   { id: 'bdop13', name: 'Пакет "Сетка защитная в бампер"', price: 9500 }, { id: 'bdop14', name: 'Подкрылок с шумоизоляцией', price: 29089 },
   { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
 ];
-
-// ==========================================
-// ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
-// ==========================================
 
 function compressImage(file, callback) {
   const reader = new FileReader(); reader.readAsDataURL(file);
@@ -726,16 +710,9 @@ function loadCatalogFromGoogle() {
       if (isLoaded) return;
       isLoaded = true; clearTimeout(timeoutId);
 
-      // Защита от страниц-заглушек провайдера Wi-Fi
       if (csvText.trim().startsWith('<')) {
           loader.innerHTML = '⚠️ Сеть блокирует таблицу (HTML). Работает база.';
           loader.style.color = '#d97706';
-          return;
-      }
-
-      if (typeof Papa === 'undefined') {
-          loader.innerHTML = '⚠️ Ошибка загрузки парсера. Работает база.';
-          loader.style.color = '#dc2626';
           return;
       }
 
@@ -744,15 +721,43 @@ function loadCatalogFromGoogle() {
         complete: function(results) {
           try {
             results.data.forEach(row => {
-              let nr = {};
-              for (let k in row) {
-                let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
-                nr[cleanK] = row[k];
+              
+              // УМНАЯ ФУНКЦИЯ ДЛЯ ПОИСКА ЦЕН (ОТРЕЗАЕТ КОПЕЙКИ И ПРОБЕЛЫ)
+              function getNumberVal(exactKeys, fuzzyKeywords) {
+                  // 1. Сначала ищем точное совпадение
+                  for(let k of exactKeys) {
+                      if(row[k]) {
+                          // Убираем пробелы, отрезаем всё после запятой/точки, оставляем только цифры
+                          let val = String(row[k]).replace(/\s+/g, '').split(',')[0].split('.')[0].replace(/\D/g, '');
+                          if(val && val !== "0") return val;
+                      }
+                  }
+                  // 2. Если колонка переименована, ищем по корню слова
+                  for(let k in row) {
+                      let cleanK = k.toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
+                      for(let f of fuzzyKeywords) {
+                          if(cleanK === f || cleanK.includes(f)) {
+                              let val = String(row[k]).replace(/\s+/g, '').split(',')[0].split('.')[0].replace(/\D/g, '');
+                              if(val && val !== "0") return val;
+                          }
+                      }
+                  }
+                  return "";
               }
 
-              let bRaw = (nr['brand'] || nr['бренд'] || nr['марка'] || "").trim();
-              let mRaw = (nr['model'] || nr['модель'] || "").trim();
-              let tRaw = (nr['trim'] || nr['комплектация'] || "").trim();
+              // ПОИСК ОБЫЧНОГО ТЕКСТА
+              function getTextVal(exactKeys, fuzzyKeywords) {
+                  for(let k of exactKeys) { if(row[k]) return row[k]; }
+                  for(let k in row) {
+                      let cleanK = k.toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
+                      for(let f of fuzzyKeywords) { if(cleanK === f || cleanK.includes(f)) return row[k]; }
+                  }
+                  return "";
+              }
+
+              let bRaw = getTextVal(['Brand', 'Бренд', 'Марка'], ['brand', 'бренд', 'марка']);
+              let mRaw = getTextVal(['Model', 'Модель'], ['model', 'модель']);
+              let tRaw = getTextVal(['Trim', 'Комплектация'], ['trim', 'комплектация']);
               
               if (!bRaw || !mRaw || !tRaw) return;
 
@@ -767,17 +772,12 @@ function loadCatalogFromGoogle() {
               let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw;
               let existing = CATALOG[bKey][mKey][tKey] || {};
 
-              function extractNumber(val) {
-                if(!val) return "";
-                let d = String(val).replace(/\D/g, '');
-                return d === "0" ? "" : d;
-              }
-
-              let pOld = extractNumber(nr['priceold'] || nr['базоваяцена'] || nr['стараяцена'] || nr['цена']);
-              let pNew = extractNumber(nr['pricenew'] || nr['спеццена'] || nr['специальнаяцена'] || nr['новаяцена']);
-              let cCar = extractNumber(nr['costcar'] || nr['себестоимость'] || nr['себесавто']);
-              let supp = extractNumber(nr['support'] || nr['поддержка'] || nr['трейдин']);
-              let mcp  = extractNumber(nr['basemcp'] || nr['мцп'] || nr['базоваямцп']);
+              // Извлекаем цифры с учетом запятых, копеек и значков ₽
+              let pOld = getNumberVal(['PriceOld', 'МЦП', 'МЦП (Базовая цена)', 'Базовая цена', 'Цена'], ['priceold', 'базоваяцена', 'мцп', 'прайс']);
+              let pNew = getNumberVal(['PriceNew', 'Спец цена', 'Специальная цена', 'Новая цена'], ['pricenew', 'спец', 'скидк']);
+              let cCar = getNumberVal(['CostCar', 'Себестоимость', 'Себес'], ['costcar', 'себес']);
+              let supp = getNumberVal(['Support', 'Поддержка', 'Трейд-ин'], ['support', 'поддерж', 'трейд']);
+              let mcp  = getNumberVal(['BaseMCP', 'Базовая МЦП'], ['basemcp', 'базоваямцп']);
 
               CATALOG[bKey][mKey][tKey] = {
                 priceOld: pOld || existing.priceOld || "",
@@ -785,8 +785,8 @@ function loadCatalogFromGoogle() {
                 costCar: cCar || existing.costCar || "",
                 support: supp || existing.support || "",
                 baseMcp: mcp || existing.baseMcp || "",
-                specs: nr['specs'] || nr['характеристики'] || existing.specs || "", 
-                stdEq: nr['stdeq'] || nr['оснащение'] || nr['базовоеоснащение'] || existing.stdEq || ""
+                specs: getTextVal(['Specs', 'Характеристики'], ['specs', 'характеристики']) || existing.specs || "", 
+                stdEq: getTextVal(['StdEq', 'Оснащение', 'Базовое оснащение'], ['stdeq', 'оснащение', 'базовое']) || existing.stdEq || ""
               };
             });
 
@@ -1082,9 +1082,6 @@ function downloadImage() {
   }, 200);
 }
 
-// ==========================================
-// ЗАПУСК: 100% ГАРАНТИЯ ЗАГРУЗКИ БЕЗ ЗАВИСАНИЙ
-// ==========================================
 try {
   populateBrandList(); 
   renderDopsUI(); 
@@ -1094,14 +1091,12 @@ try {
   calculateMargin(); 
   calculateOjMargin();
 } catch (error) {
-  // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ
   console.error(error);
   localStorage.removeItem('kp_db_v24');
-  alert("Браузер повредил старые файлы. Мы восстановили работу.");
+  alert("Сброс кэша. Обновите страницу.");
   location.reload();
 }
 
-// Запускаем фоновую загрузку цен
 loadCatalogFromGoogle();
 </script>
 </body>

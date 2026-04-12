@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
-<!-- Асинхронная загрузка библиотек (не вешает страницу) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -54,10 +54,6 @@ button:hover { background: #1d4ed8; }
 .oj-calc { background: #e0f2fe; border: 1px solid #bae6fd; }
 .oj-calc .margin-calc-header { color: #0369a1; }
 .oj-calc input { border: 1px solid #7dd3fc; background: #f0f9ff; }
-
-.credit-calc { background: #ecfdf5; border: 1px solid #a7f3d0; }
-.credit-calc .margin-calc-header { color: #065f46; }
-.credit-calc input { border: 1px solid #6ee7b7; background: #f0fdf4; }
 
 .dealer-calc { background: #f3f4f6; border: 1px solid #e5e7eb; margin-bottom: 15px; margin-top: 15px;}
 .dealer-calc .margin-calc-header { color: #4b5563; }
@@ -124,10 +120,6 @@ button:hover { background: #1d4ed8; }
 .doc-price-new { font-size: 28px; font-weight: bold; line-height: 1.1; }
 .doc-discount { padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
 
-.doc-credit-badge { background: #dcfce7; color: #166534; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-top: 15px; display: none; align-items: center; justify-content: space-between; page-break-inside: avoid; }
-.doc-credit-badge-left { font-size: 12px; line-height: 1.4; }
-.doc-credit-badge-right { font-size: 18px; font-weight: bold; }
-
 .doc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; line-height: 1.4; page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px; }
 
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
@@ -145,7 +137,6 @@ button:hover { background: #1d4ed8; }
 .theme-official .doc-price-new { color: #111; }
 .theme-official .doc-discount { border: 1px solid #111; background: #fff; color: #111; border-radius: 0; }
 .theme-official .doc-photo-box img, .theme-official .doc-logo { border-radius: 0; }
-.theme-official .doc-credit-badge { background: transparent; color: #111; border: 2px solid #111; border-radius: 0; }
 
 .theme-catalog .doc-top-line { display: none; }
 .theme-catalog .doc-main { flex-direction: column-reverse; gap: 0; }
@@ -180,7 +171,6 @@ body.mobile-view .theme-catalog .doc-photo-box[data-count="2"], body.mobile-view
 body.mobile-view .theme-catalog .doc-photo-box img { max-height: 200px; }
 body.mobile-view .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
 body.mobile-view .doc-discount { align-self: flex-start; }
-body.mobile-view .doc-credit-badge { flex-direction: column; align-items: flex-start; gap: 5px; }
 body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
 body.mobile-view .doc-equip { column-count: 1; }
 
@@ -190,7 +180,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   .panel, .toolbar, .telegram-warning, #toast-container { display: none !important; }
   #document-container { box-shadow: none; margin: 0; padding: 15mm 15mm !important; width: 100%; max-width: 100%; min-height: auto !important; height: auto !important; }
   .doc-footer { margin-bottom: 0 !important; }
-  .doc-price-box, .doc-footer, .doc-photo-box, #dealerEqBlock, .doc-credit-badge { page-break-inside: avoid; break-inside: avoid; }
+  .doc-price-box, .doc-footer, .doc-photo-box, #dealerEqBlock { page-break-inside: avoid; break-inside: avoid; }
 }
 .telegram-warning { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border: 1px solid #fca5a5; text-align: center; }
 </style>
@@ -215,7 +205,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   <div id="tab-data" class="tab-content active">
     <div class="catalog-box">
       <h3>Быстрый выбор из каталога</h3>
-      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Загрузка актуальных цен...</div>
+      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Подготовка каталога...</div>
       
       <select id="catBrand" onchange="updateModels()">
         <option value="">-- Выберите бренд --</option>
@@ -274,8 +264,8 @@ body.mobile-view .doc-equip { column-count: 1; }
     <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
 
     <div class="row" style="margin-top: 5px;">
-      <input id="vPriceOld" type="text" placeholder="МЦП / Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
-      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); onPriceNewChange();">
+      <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
     </div>
 
     <div class="margin-calc">
@@ -323,37 +313,6 @@ body.mobile-view .doc-equip { column-count: 1; }
         <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
         <div class="margin-result">
           <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- НОВЫЙ КРЕДИТНЫЙ КАЛЬКУЛЯТОР -->
-    <div class="margin-calc credit-calc">
-      <div class="margin-calc-header" onclick="toggleCalc('creditCalcContent', 'creditToggleIcon')">
-        <span>💳 Кредитный калькулятор</span>
-        <span id="creditToggleIcon">▶</span>
-      </div>
-      <div id="creditCalcContent" style="display: none; padding-top: 10px;">
-        <span class="hint">Рассчитывается от цены со скидкой (Финальной)</span>
-        <div class="row">
-          <input type="number" id="creditTerm" placeholder="Срок кредита (мес)" value="84" oninput="calculateCredit('term')">
-          <input type="text" id="creditRate" placeholder="Ставка (% годовых)" value="19.9" oninput="calculateCredit('rate')">
-        </div>
-        <div class="row">
-          <div>
-            <span class="hint" style="margin-bottom: 2px;">Первоначальный взнос (₽):</span>
-            <input type="text" id="creditInitialRub" placeholder="Сумма в рублях" oninput="formatInputNumber(this); calculateCredit('rub')">
-          </div>
-          <div>
-            <span class="hint" style="margin-bottom: 2px;">Первоначальный взнос (%):</span>
-            <input type="number" id="creditInitialPct" placeholder="Процент от цены" oninput="calculateCredit('pct')">
-          </div>
-        </div>
-        <div class="margin-result">
-          <div style="margin-bottom: 10px;">Ежемесячный платеж: <span id="outCreditPayment" style="color:#065f46;">0 ₽</span></div>
-          <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1f2937; font-weight: bold;">
-            <input type="checkbox" id="showCreditInKP" onchange="renderKP()"> ☑️ Добавить блок с кредитом в КП
-          </label>
         </div>
       </div>
     </div>
@@ -462,18 +421,7 @@ body.mobile-view .doc-equip { column-count: 1; }
       <div class="doc-discount" id="outDiscount" style="display:none;">Выгода —</div>
     </div>
 
-    <!-- БЛОК КРЕДИТА В ДОКУМЕНТЕ -->
-    <div class="doc-credit-badge" id="outCreditBadge">
-      <div class="doc-credit-badge-left">
-        <b>Комфортный автокредит:</b><br>
-        Взнос: <span id="outCreditDownpay">0</span> ₽ / Срок: <span id="outCreditTerm">0</span> мес.
-      </div>
-      <div class="doc-credit-badge-right">
-        от <span id="outCreditFinalPay">0</span> ₽/мес
-      </div>
-    </div>
-
-    <div class="doc-footer" style="margin-top: 15px;">
+    <div class="doc-footer">
       <div>
         <strong style="display:block; margin-bottom:5px;">Ваш менеджер:</strong>
         <span id="outMgrName">Имя менеджера</span><br>
@@ -511,53 +459,14 @@ body.mobile-view .doc-equip { column-count: 1; }
 </div>
 
 <script>
+// ==========================================
+// 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
+// ==========================================
 const $ = id => document.getElementById(id);
 const val = id => { const el = $(id); return el ? el.value.trim() : ''; };
 const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
 const formatRub = v => { let d = String(v).replace(/\D/g, ''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
 const getNum = v => Number(String(v).replace(/\D/g, '')) || 0;
-
-// ВОССТАНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ ТЕЛЕФОНОВ
-function formatPhone(input) {
-  let val = input.value.replace(/\D/g, '');
-  if (!val) { input.value = ''; return; }
-  if (val[0] === '7' || val[0] === '8') val = val.slice(1);
-  let res = '+7 ';
-  if (val.length > 0) res += '(' + val.substring(0, 3);
-  if (val.length >= 4) res += ') ' + val.substring(3, 6);
-  if (val.length >= 7) res += '-' + val.substring(6, 8);
-  if (val.length >= 9) res += '-' + val.substring(8, 10);
-  input.value = res;
-}
-
-// ВОССТАНОВЛЕННАЯ ФУНКЦИЯ БЭКАПА
-function exportDB() {
-  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-  let dlAnchorElem = document.createElement('a');
-  dlAnchorElem.setAttribute("href", dataStr);
-  dlAnchorElem.setAttribute("download", "kp_backup.json");
-  dlAnchorElem.click();
-}
-
-// ВОССТАНОВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ БЭКАПА
-function importDB(input) {
-  if (!input.files || input.files.length === 0) return;
-  let reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      let imported = JSON.parse(e.target.result);
-      if (imported && typeof imported === 'object') {
-        db = imported;
-        saveDB();
-        alert("База успешно загружена! Страница будет обновлена.");
-        location.reload();
-      }
-    } catch(err) {
-      alert("Ошибка: Неверный формат файла");
-    }
-  };
-  reader.readAsText(input.files[0]);
-}
 
 function formatInputNumber(el) {
   if (!el) return;
@@ -576,12 +485,18 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
+// ==========================================
+// 2. БРОНЕБОЙНАЯ ЗАГРУЗКА БАЗЫ ДАННЫХ (Защита от сбоя кэша)
+// ==========================================
 let db;
 try {
   db = JSON.parse(localStorage.getItem('kp_db_v24'));
   if (!db || typeof db !== 'object') db = {};
-} catch(e) { db = {}; }
+} catch(e) {
+  db = {};
+}
 
+// Принудительно восстанавливаем все массивы, если они сломались
 if (!Array.isArray(db.mgrs)) db.mgrs = [];
 if (!Array.isArray(db.tpls)) db.tpls = [];
 if (!Array.isArray(db.imgCars)) db.imgCars = [];
@@ -591,6 +506,9 @@ if (typeof db.imgLogo !== 'string') db.imgLogo = '';
 
 const saveDB = () => localStorage.setItem('kp_db_v24', JSON.stringify(db));
 
+// ==========================================
+// 3. БАЗА ТЕКСТОВ И КОМПЛЕКТАЦИЙ
+// ==========================================
 const DIRECT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv&_nocache=" + Date.now();
 
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -629,7 +547,369 @@ const BELGEE_X70_2WD_SPECS = "Двигатель: 1.5 Турбо (150 л.с., 25
 const BELGEE_X70_4WD_SPECS = "Двигатель: 1.5 Турбо + Мягкий гибрид 48V (150 л.с., 300 Нм)\nКПП: 7-ступенчатый робот (7DCT)\nПривод: Полный\nРазгон 0-100 км/ч: 12.3 сек\nРасход (смешанный): 7.3 л / 100 км (АИ-95)\nДорожный просвет: 171 мм\nГабариты: 4544 × 1831 × 1713 мм\nОбъем багажника: 378 л\nТопливный бак: 58 л";
 const BELGEE_X70_ACTIVE_EQ = "Галогеновые фары ближнего/дальнего света с LED-ДХО и задние светодиодные фонари\nЛегкосплавные диски 17\" и рейлинги на крыше\nОтделка салона экокожей со вставками под «карбон»\nЦифровая приборная панель и мультимедиа 12.3\" (6 динамиков, дублирование смартфона)\nДвухзонный климат-контроль и базовый круиз-контроль\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя стеклоочистителей и форсунок\nКамера заднего вида и задние датчики парковки\nБесключевой запуск (кнопка) и электромеханический ручник с AutoHold\nПакет активной безопасности (ESC, ABS, помощь на подъеме/спуске, контроль усталости)\n4 подушки безопасности (фронтальные и боковые)";
 const BELGEE_X70_STYLE_EQ = "Светодиодная оптика (LED фары, ДХО, фонари) с датчиками света и дождя\nЛегкосплавные диски 17\" и рейлинги на крыше\nОтделка салона экокожей со вставками под «карбон»\nЦифровая приборная панель и мультимедиа 12.3\" с дублированием смартфона\nДвухзонный климат-контроль и базовый круиз-контроль\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя дворников и форсунок\nСистема бесключевого доступа и кнопка запуска двигателя\nКамера заднего вида + передние и задние датчики парковки\nСалонное зеркало с автозатемнением\nЭлектромеханический ручник (EPB) с функцией AutoHold\n6 подушек безопасности (фронтальные, боковые и шторки)";
-const BELGEE_X70_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (автодальний свет, динамические поворотники)\nЛегкосплавные диски 18\" и рейлинги на крыше\nОтделка салона экокожей, атмосферная подсветка интерьера\nЦифSETTINGS.phone;
+const BELGEE_X70_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (автодальний свет, динамические поворотники)\nЛегкосплавные диски 18\" и рейлинги на крыше\nОтделка салона экокожей, атмосферная подсветка интерьера\nЦифровая приборная панель и мультимедиа 12.3\" + беспроводная зарядка и 8 динамиков\nДвухзонный климат-контроль и интеллектуальный круиз-контроль (ICC)\n«Теплые опции»: подогрев всех сидений, руля, зоны покоя дворников и форсунок\nСиденье водителя с электроприводом\nБесключевой доступ, кнопка запуска и электропривод двери багажника\nЭлектроскладывание зеркал и салонное зеркало с автозатемнением\nСистема камер кругового обзора 360° + передние и задние парктроники\nКомплекс умных ассистентов (ADAS): автоторможение, удержание в полосе, чтение знаков\n6 подушек безопасности (фронтальные, боковые и шторки)";
+
+const BASE_CATALOG = {
+  "Omoda": {
+    "C5": { "Active": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Drive": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_DRIVE_EQ, priceOld: "", priceNew: "" }, "Style": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_STYLE_EQ, priceOld: "", priceNew: "" } },
+    "C7": { "Актив (Передний привод)": { specs: OMODA_C7_FWD_SPECS, stdEq: OMODA_C7_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Драйв (Передний привод)": { specs: OMODA_C7_FWD_SPECS, stdEq: OMODA_C7_DRIVE_EQ, priceOld: "", priceNew: "" }, "Актив (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Драйв (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_DRIVE_EQ, priceOld: "", priceNew: "" }, "Стиль (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_STYLE_EQ, priceOld: "", priceNew: "" } }
+  },
+  "Jaecoo": {
+    "J6": { "Актив": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Комфорт": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "J7": { "Комфорт (Передний привод)": { specs: JAECOO_J7_FWD_SPECS, stdEq: JAECOO_J7_COMFORT_EQ, priceOld: "", priceNew: "" }, "Комфорт (Полный привод)": { specs: JAECOO_J7_AWD_SPECS, stdEq: JAECOO_J7_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж (Передний привод)": { specs: JAECOO_J7_FWD_SPECS, stdEq: JAECOO_J7_PRESTIGE_EQ, priceOld: "", priceNew: "" }, "Престиж (Полный привод)": { specs: JAECOO_J7_AWD_SPECS, stdEq: JAECOO_J7_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "J8": { "Комфорт": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_PRESTIGE_EQ, priceOld: "", priceNew: "" }, "Престиж+": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_PRESTIGE_PLUS_EQ, priceOld: "", priceNew: "" } }
+  },
+  "Belgee": {
+    "S50": { "Актив (Механика)": { specs: BELGEE_S50_MT_SPECS, stdEq: BELGEE_S50_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Актив (Автомат)": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "X50+": { "Актив": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_STYLE_EQ, priceOld: "", priceNew: "" }, "Оникс": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_ONYX_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
+  }
+};
+
+let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
+let currentCatalogSupport = ""; 
+
+function checkMobile() { if (window.innerWidth <= 900) document.body.classList.add('mobile-view'); else document.body.classList.remove('mobile-view'); }
+window.addEventListener('resize', checkMobile); checkMobile();
+
+const DEALER_SETTINGS = { logo: "logo.jpg.jpg", name: "Максимум", address: "Санкт-Петербург, Рыбинская д.1, лит. 3", phone: "+7 (812) 416-96-95" };
+const AUTO_IMAGES = { "omodac5": "omodac5.webp", "omodac7": "omodac7.webp", "jaecooj6": "jaecooj6.webp", "jaecooj7": "jaecooj7.webp", "jaecooj8": "jaecooj8.webp", "belgees50": "belgees50.webp", "belgeex50+": "belgeex50.webp", "belgeex50plus": "belgeex50.webp", "belgeex70": "belgeex70.webp" };
+
+const DEALER_DOPS_BASE = [
+  { id: 'bdop1', name: 'Пакет "Оклейка капота (защитной пленкой)"', price: 43350 }, { id: 'bdop2', name: 'Пакет "Оклейка под ручками дверей"', price: 8390 },
+  { id: 'bdop3', name: 'Пакет "Оклейка полоса на капот"', price: 24450 }, { id: 'bdop4', name: 'Пакет "Оклейка полоса на крышу"', price: 18900 },
+  { id: 'bdop5', name: 'Пакет "Оклейка порогов 4 шт"', price: 12780 }, { id: 'bdop6', name: 'Пакет "Оклейка фар (защитной пленкой)"', price: 15890 },
+  { id: 'bdop7', name: 'Пакет "Защитное керамическое покрытие (1 слой)"', price: 78600 }, { id: 'bdop8', name: 'Пакет "Тонировка легкового авто (5% / 15%)"', price: 19240 },
+  { id: 'bdop9', name: 'Пакет "Шумоизоляция дверей I"', price: 30260 }, { id: 'bdop10', name: 'Ковры 3D в салон (полиуретан)', price: 3554 },
+  { id: 'bdop11', name: 'Ковер в багажник с защитой ТЭП', price: 3458 }, { id: 'bdop12', name: 'Пакет "Защита двигателя"', price: 12623 },
+  { id: 'bdop13', name: 'Пакет "Сетка защитная в бампер"', price: 9500 }, { id: 'bdop14', name: 'Подкрылок с шумоизоляцией', price: 29089 },
+  { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
+];
+
+// ==========================================
+// ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
+// ==========================================
+
+function compressImage(file, callback) {
+  const reader = new FileReader(); reader.readAsDataURL(file);
+  reader.onload = e => {
+    const img = new Image(); img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas'); const MAX_WIDTH = 1200;
+      let width = img.width; let height = img.height;
+      if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+      canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+      callback(canvas.toDataURL('image/jpeg', 0.8));
+    };
+  };
+}
+
+function exportDB() {
+  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+  let link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", "kp_backup.json");
+  document.body.appendChild(link); link.click(); link.remove(); showToast("✅ Резервная копия сохранена!");
+}
+
+function importDB(input) {
+  if (!input.files[0]) return; let reader = new FileReader();
+  reader.onload = e => {
+    try { let newDB = JSON.parse(e.target.result); if(newDB && newDB.mgrs) { db = newDB; saveDB(); location.reload(); } else { showToast("❌ Неверный формат файла!", true); } } 
+    catch(err) { showToast("❌ Ошибка чтения файла!", true); }
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function copyTextForMessenger() {
+  let car = val('vCarName') || 'Автомобиль'; let pkg = val('vCarPkg') ? `(${val('vCarPkg')})` : '';
+  let price = $('outPriceNew') ? $('outPriceNew').textContent : ''; let mgr = val('vMgrName') || 'Менеджер'; let phone = val('vMgrPhone') || '';
+  let text = `Здравствуйте! Отправляю вам Коммерческое предложение.\n\n🚗 Автомобиль: ${car} ${pkg}\n💰 Специальная цена: ${price}\n\nС уважением, ${mgr} ${phone}`;
+  navigator.clipboard.writeText(text).then(() => showToast('💬 Текст скопирован! Вставьте в WhatsApp.'));
+}
+
+function toggleCalc(contentId, iconId) {
+  const content = $(contentId); const icon = $(iconId);
+  if (!content || !icon) return;
+  if (content.style.display === 'none' || content.style.display === '') { content.style.display = 'block'; icon.textContent = '▼'; } 
+  else { content.style.display = 'none'; icon.textContent = '▶'; }
+}
+
+function calculateMargin() {
+  let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
+  if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
+  
+  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
+  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
+  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
+  
+  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
+  if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
+  if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
+}
+
+function calculateOjMargin() {
+  let factPaid = getNum(val('ojFactPaid')); let basePrice = getNum(val('ojBasePrice'));
+  let discountInput = val('ojDiscount').replace(',', '.'); let discount = parseFloat(discountInput) || 0; 
+  if (!factPaid && !basePrice) { if($('outOjPremium')) $('outOjPremium').innerHTML = '0 ₽'; return; }
+  let preCalc = basePrice * (1 - (discount / 100)); let premium = Math.round(factPaid - preCalc);
+  let color = premium < 0 ? '#dc2626' : '#166534';
+  if ($('outOjPremium')) $('outOjPremium').innerHTML = `<span style="color:${color}">${premium.toLocaleString('ru-RU')} ₽</span>`;
+}
+
+function toggleTISupport() {
+  const cb = $('useTISupport'); if (!cb) return;
+  if (cb.checked) {
+    setVal('calcSupport', currentCatalogSupport);
+    if (currentCatalogSupport) formatInputNumber($('calcSupport'));
+  } else { setVal('calcSupport', ''); }
+  calculateMargin();
+}
+
+function openDopsModal() { renderDopsUI(); const m = $('dopsModal'); if(m) m.classList.add('active'); }
+function closeDopsModal() { const m = $('dopsModal'); if(m) m.classList.remove('active'); renderKP(); }
+
+function addCustomDop() {
+  const name = val('newDopName'); const price = getNum(val('newDopPrice'));
+  if (!name) return showToast('❌ Введите название опции', true);
+  const newId = 'cdop_' + Date.now(); 
+  db.customDops.push({ id: newId, name: name, price: price }); saveDB(); 
+  setVal('newDopName', ''); setVal('newDopPrice', '');
+  renderDopsUI(); setTimeout(() => { let cb = $(newId); if(cb) { cb.checked = true; renderKP(); } }, 50);
+}
+
+function removeCustomDop(id) { 
+  if (confirm('Удалить эту опцию навсегда?')) { 
+    db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); 
+  } 
+}
+
+function renderDopsUI() {
+  const list = $('modal-dops-list'); if (!list) return;
+  let tempState = {}; 
+  document.querySelectorAll('.dop-check').forEach(cb => { 
+    let prInput = $(cb.id + '_price');
+    tempState[cb.id] = { checked: cb.checked, price: prInput ? prInput.value : 0 }; 
+  });
+
+  const validCustomDops = (db.customDops || []).filter(d => d && d.id);
+  const allDops = [...validCustomDops, ...DEALER_DOPS_BASE];
+  
+  list.innerHTML = allDops.map(d => {
+    const isCustom = d.id.startsWith('cdop_');
+    return `<div class="dop-row dop-item"><label class="dop-label"><input type="checkbox" class="dop-check" id="${d.id}" data-name='${d.name}' onchange="renderKP()"><span style="${isCustom ? 'color: #1d4ed8; font-weight: bold;' : ''}">${d.name}</span></label><div style="display:flex; align-items:center;"><input type="number" class="dop-price-input dop-price" id="${d.id}_price" value="${d.price}" oninput="renderKP()">${isCustom ? `<button class="del-dop-btn" onclick="removeCustomDop('${d.id}')" title="Удалить">×</button>` : '<div style="width:36px"></div>'}</div></div>`;
+  }).join('');
+  
+  document.querySelectorAll('.dop-check').forEach(cb => { 
+    if (tempState[cb.id]) { 
+      cb.checked = tempState[cb.id].checked; 
+      let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; 
+    } 
+  });
+}
+
+function makeClean(str) { return (str || "").toLowerCase().replace(/[хХ]/g, 'x').replace(/\s+/g, '').replace(/plus/g, '+'); }
+
+function loadCatalogFromGoogle() {
+  const loader = $('catalog-loader'); if (!loader) return;
+  let isLoaded = false;
+
+  const timeoutId = setTimeout(() => {
+    if (!isLoaded) {
+      isLoaded = true;
+      loader.innerHTML = '⚠️ Цены не загрузились (сеть). Работает базовая версия.';
+      loader.style.color = '#d97706';
+    }
+  }, 4000);
+
+  fetch(DIRECT_URL)
+    .then(response => { if (!response.ok) throw new Error('Net Error'); return response.text(); })
+    .then(csvText => {
+      if (isLoaded) return;
+      isLoaded = true; clearTimeout(timeoutId);
+
+      // Защита от страниц-заглушек провайдера Wi-Fi
+      if (csvText.trim().startsWith('<')) {
+          loader.innerHTML = '⚠️ Сеть блокирует таблицу (HTML). Работает база.';
+          loader.style.color = '#d97706';
+          return;
+      }
+
+      if (typeof Papa === 'undefined') {
+          loader.innerHTML = '⚠️ Ошибка загрузки парсера. Работает база.';
+          loader.style.color = '#dc2626';
+          return;
+      }
+
+      Papa.parse(csvText, {
+        header: true, skipEmptyLines: true, transformHeader: function(h) { return h ? h.trim() : ""; }, 
+        complete: function(results) {
+          try {
+            results.data.forEach(row => {
+              let nr = {};
+              for (let k in row) {
+                let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
+                nr[cleanK] = row[k];
+              }
+
+              let bRaw = (nr['brand'] || nr['бренд'] || nr['марка'] || "").trim();
+              let mRaw = (nr['model'] || nr['модель'] || "").trim();
+              let tRaw = (nr['trim'] || nr['комплектация'] || "").trim();
+              
+              if (!bRaw || !mRaw || !tRaw) return;
+
+              let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
+
+              let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw;
+              if (!CATALOG[bKey]) CATALOG[bKey] = {};
+
+              let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw;
+              if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
+
+              let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw;
+              let existing = CATALOG[bKey][mKey][tKey] || {};
+
+              function extractNumber(val) {
+                if(!val) return "";
+                let d = String(val).replace(/\D/g, '');
+                return d === "0" ? "" : d;
+              }
+
+              let pOld = extractNumber(nr['priceold'] || nr['базоваяцена'] || nr['стараяцена'] || nr['цена']);
+              let pNew = extractNumber(nr['pricenew'] || nr['спеццена'] || nr['специальнаяцена'] || nr['новаяцена']);
+              let cCar = extractNumber(nr['costcar'] || nr['себестоимость'] || nr['себесавто']);
+              let supp = extractNumber(nr['support'] || nr['поддержка'] || nr['трейдин']);
+              let mcp  = extractNumber(nr['basemcp'] || nr['мцп'] || nr['базоваямцп']);
+
+              CATALOG[bKey][mKey][tKey] = {
+                priceOld: pOld || existing.priceOld || "",
+                priceNew: pNew || existing.priceNew || "",
+                costCar: cCar || existing.costCar || "",
+                support: supp || existing.support || "",
+                baseMcp: mcp || existing.baseMcp || "",
+                specs: nr['specs'] || nr['характеристики'] || existing.specs || "", 
+                stdEq: nr['stdeq'] || nr['оснащение'] || nr['базовоеоснащение'] || existing.stdEq || ""
+              };
+            });
+
+            loader.style.display = 'none';
+            
+            let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
+            populateBrandList();
+            if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
+            if (curModel) { setVal('catModel', curModel); updateTrims(); }
+            if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
+
+            showToast('✅ Базовые и Спец цены успешно обновлены!');
+          } catch (e) {
+             console.error("CSV Parse Error", e);
+          }
+        }
+      });
+    })
+    .catch(err => {
+      if (isLoaded) return;
+      isLoaded = true; clearTimeout(timeoutId);
+      loader.innerHTML = '❌ Цены заблокированы. Работает база.';
+      loader.style.color = '#dc2626';
+    });
+}
+
+function populateBrandList() {
+  const selBrand = $('catBrand'); if (!selBrand) return;
+  selBrand.innerHTML = '<option value="">-- Выберите бренд --</option>';
+  Object.keys(CATALOG).forEach(brand => selBrand.options.add(new Option(brand, brand)));
+}
+
+function updateModels() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selBrand || !selModel || !selTrim) return;
+  selModel.innerHTML = '<option value="">-- Выберите модель --</option>'; selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; selTrim.disabled = true;
+  if (selBrand.value && CATALOG[selBrand.value]) { 
+      selModel.disabled = false; Object.keys(CATALOG[selBrand.value]).forEach(model => selModel.options.add(new Option(model, model))); 
+  } else { selModel.disabled = true; }
+}
+
+function updateTrims() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selBrand || !selModel || !selTrim) return;
+  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+  if (selModel.value && CATALOG[selBrand.value] && CATALOG[selBrand.value][selModel.value]) { 
+      selTrim.disabled = false; Object.keys(CATALOG[selBrand.value][selModel.value]).forEach(trim => selTrim.options.add(new Option(trim, trim))); 
+  } else { selTrim.disabled = true; }
+}
+
+function applyCatalog() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selTrim || !selTrim.value || !CATALOG[selBrand.value] || !CATALOG[selBrand.value][selModel.value]) return;
+  const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
+  if (!data) return;
+  
+  setVal('vCarName', `${selBrand.value} ${selModel.value}`); setVal('vCarPkg', selTrim.value); setVal('vCarVIN', ''); setVal('vCarColor', '');
+  setVal('vCarSpecs', data.specs || ""); setVal('vCarStdEq', data.stdEq || ""); setVal('vCarEq', '');
+  
+  setVal('vPriceOld', data.priceOld || ""); if(data.priceOld) formatInputNumber($('vPriceOld'));
+  setVal('vPriceNew', data.priceNew || ""); if(data.priceNew) formatInputNumber($('vPriceNew'));
+  
+  setVal('calcCostCar', data.costCar || ""); if(data.costCar) formatInputNumber($('calcCostCar'));
+  setVal('ojBasePrice', data.baseMcp || ""); if(data.baseMcp) formatInputNumber($('ojBasePrice'));
+  
+  currentCatalogSupport = data.support || ""; 
+  const tiCb = $('useTISupport'); if (tiCb) tiCb.checked = false; 
+  setVal('calcSupport', ""); 
+  
+  document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+  db.imgCars = []; saveDB(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
+  showToast("✅ Автомобиль загружен из каталога");
+}
+
+function normalizeCarKey(name) { return (name || '').toLowerCase().replace(/\s+/g, '').replace(/plus/g, '+'); }
+function onCarNameInput() { db.imgCars = []; saveDB(); renderGallery(); renderKP(); }
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  const t = $(tabId); if (t) t.classList.add('active'); 
+  if (btn) btn.classList.add('active'); 
+  renderLists();
+}
+
+const vLogo = $('vLogoImg');
+if (vLogo) {
+  vLogo.addEventListener('change', function() {
+    if (!this.files || !this.files.length) return; 
+    compressImage(this.files[0], compressed => { db.imgLogo = compressed; saveDB(); renderKP(); });
+  });
+}
+
+const vImg = $('vCarImg');
+if (vImg) {
+  vImg.addEventListener('change', async function () {
+    if (!this.files || !this.files.length) return; 
+    const files = Array.from(this.files).slice(0, 3); let newPhotos = [];
+    for(let file of files) { await new Promise(res => { compressImage(file, compressed => { newPhotos.push(compressed); res(); }); }); }
+    db.imgCars = [...(db.imgCars || []), ...newPhotos].slice(0, 3); saveDB(); renderGallery(); renderKP(); this.value = '';
+  });
+}
+
+function renderGallery() {
+  const gal = $('mini-gallery'); if(!gal) return;
+  if(!db.imgCars || db.imgCars.length === 0) { gal.innerHTML = ''; return; }
+  gal.innerHTML = db.imgCars.map((img, i) => `
+    <div style="position:relative; width:65px; height:65px; border-radius:6px; overflow:hidden; border:1px solid #d1d5db; flex-shrink:0;">
+      <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
+      <button onclick="removePhoto(${i})" style="position:absolute; top:0; right:0; background:rgba(220,38,38,0.9); color:#fff; border:none; width:22px; height:22px; font-size:14px; cursor:pointer; margin:0; padding:0; border-radius:0 0 0 4px;">×</button>
+    </div>
+  `).join('');
+}
+
+function removePhoto(idx) { if (!db.imgCars) return; db.imgCars.splice(idx, 1); saveDB(); renderGallery(); renderKP(); }
+
+function renderKP() {
+  const dc = $('document-container');
+  if (dc) dc.className = `theme-${val('vTheme') || 'premium'}`;
+  
+  if ($('outDName')) $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
+  if ($('outDAddr')) $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
+  if ($('outDContacts')) $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
 
   let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
   if ($('outLogo')) $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
@@ -689,18 +969,6 @@ const BELGEE_X70_PRESTIGE_EQ = "Интеллектуальная светоди�
       else { $('outDiscount').style.display = 'none'; }
   }
 
-  // ОТОБРАЖЕНИЕ КРЕДИТНОГО БЛОКА В ДОКУМЕНТЕ
-  const creditBadge = $('outCreditBadge');
-  const showCredit = $('showCreditInKP');
-  const creditPaymentNum = getNum($('outCreditPayment') ? $('outCreditPayment').textContent : '');
-  if (creditBadge && showCredit) {
-      if (showCredit.checked && creditPaymentNum > 0) {
-          creditBadge.style.display = 'flex';
-      } else {
-          creditBadge.style.display = 'none';
-      }
-  }
-
   if ($('outMgrName')) $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера'; 
   if ($('outMgrPhone')) $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон'; 
   if ($('outMgrEmail')) $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
@@ -721,13 +989,11 @@ function autoNumDate() {
 
 function confirmClear() {
   if(confirm("Очистить все данные в анкете?")) {
-    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount', 'creditInitialRub', 'creditInitialPct', 'vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
+    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
     document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
     db.imgCars = []; const cb = $('useTISupport'); if(cb) cb.checked = false; currentCatalogSupport = "";
-    const showCr = $('showCreditInKP'); if(showCr) showCr.checked = false;
-    setVal('creditTerm', '84'); setVal('creditRate', '19.9');
     saveDB(); renderGallery(); renderKP(); const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
-    calculateMargin(); calculateOjMargin(); calculateCredit('price'); showToast("Анкета очищена!");
+    calculateMargin(); calculateOjMargin(); showToast("Анкета очищена!");
   }
 }
 
@@ -745,8 +1011,7 @@ function saveItem(type) {
     });
     db.tpls.push({
       title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'), cn: val('vCarName'), cp: val('vCarPkg'), cvin: val('vCarVIN'), ccol: val('vCarColor'), cs: val('vCarSpecs'),
-      ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'), mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail'), dops: savedDops,
-      crTerm: val('creditTerm'), crRate: val('creditRate'), crRub: val('creditInitialRub'), crCheck: $('showCreditInKP') ? $('showCreditInKP').checked : false
+      ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'), mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail'), dops: savedDops
     });
     setVal('tName', '');
   }
@@ -759,12 +1024,6 @@ function loadItem(type, idx) {
   else if (type === 'tpls') {
     setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp); setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarVIN', i.cvin); setVal('vCarColor', i.ccol);
     setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn); setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
-    
-    if(i.crTerm) setVal('creditTerm', i.crTerm);
-    if(i.crRate) setVal('creditRate', i.crRate);
-    if(i.crRub) setVal('creditInitialRub', i.crRub);
-    if($('showCreditInKP')) $('showCreditInKP').checked = i.crCheck || false;
-
     document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
     if (i.dops && Array.isArray(i.dops)) {
       let needsReRender = false;
@@ -773,7 +1032,6 @@ function loadItem(type, idx) {
       i.dops.forEach(d => { let cb = document.getElementById(d.id); let pr = document.getElementById(d.id + '_price'); if (cb) cb.checked = true; if (pr) pr.value = d.price; });
     }
     ['vPriceOld', 'vPriceNew'].forEach(id => { let el = $(id); if(el && el.value) formatInputNumber(el); });
-    calculateCredit('rub');
   }
   switchTab('tab-data', document.querySelector('.tab')); renderKP(); showToast("✅ Данные загружены!");
 }
@@ -786,9 +1044,6 @@ function renderLists() {
 }
 
 function downloadPDF() {
-  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-    return showToast('⏳ Подождите секунду, загружается модуль для PDF...', true);
-  }
   const btn = $('btn-pdf'); if (!btn) return;
   const originalText = btn.textContent; btn.textContent = '⏳ Делаем PDF...'; btn.disabled = true;
   const element = $('document-container'); const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
@@ -810,7 +1065,6 @@ function downloadPDF() {
 }
 
 function downloadImage() {
-  if (typeof html2canvas === 'undefined') return showToast('⏳ Подождите секунду, загружается модуль для фото...', true);
   const btn = $('btn-img'); if (!btn) return;
   const originalText = btn.textContent; btn.textContent = '⏳ Делаем фото...'; btn.disabled = true;
   const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
@@ -828,12 +1082,26 @@ function downloadImage() {
   }, 200);
 }
 
+// ==========================================
+// ЗАПУСК: 100% ГАРАНТИЯ ЗАГРУЗКИ БЕЗ ЗАВИСАНИЙ
+// ==========================================
 try {
-  populateBrandList(); renderDopsUI(); renderLists(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin(); calculateCredit('price');
+  populateBrandList(); 
+  renderDopsUI(); 
+  renderLists(); 
+  renderGallery(); 
+  renderKP(); 
+  calculateMargin(); 
+  calculateOjMargin();
 } catch (error) {
-  console.error("Initialization error:", error);
+  // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ
+  console.error(error);
+  localStorage.removeItem('kp_db_v24');
+  alert("Браузер повредил старые файлы. Мы восстановили работу.");
+  location.reload();
 }
 
+// Запускаем фоновую загрузку цен
 loadCatalogFromGoogle();
 </script>
 </body>

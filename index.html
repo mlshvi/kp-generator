@@ -206,7 +206,7 @@ body.mobile-view .doc-equip { column-count: 1; }
     <div class="catalog-box">
       <h3>Быстрый выбор из каталога</h3>
       <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px; display: none;">🔄 Загрузка актуальных цен Belgee...</div>
-      <select id="catBrand" onchange="updateModels()">
+      <select id="catBrand" onchange="updateModels()" disabled>
         <option value="">-- Выберите бренд --</option>
       </select>
       <select id="catModel" onchange="updateTrims()" disabled>
@@ -459,7 +459,8 @@ body.mobile-view .doc-equip { column-count: 1; }
 </div>
 
 <script>
-const GOOGLE_SHEET_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv");
+// ПРЯМАЯ ССЫЛКА НА GOOGLE ТАБЛИЦУ (БЕЗ ПРОКСИ, ЧТОБЫ НЕ ЗАВИСАЛО)
+const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv";
 
 // ======= ВОЗВРАЩЕНЫ ВСЕ ХАРАКТЕРИСТИКИ И ОСНАЩЕНИЕ =======
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -663,51 +664,77 @@ function renderDopsUI() {
   document.querySelectorAll('.dop-check').forEach(cb => { if (tempState[cb.id]) { cb.checked = tempState[cb.id].checked; $(cb.id + '_price').value = tempState[cb.id].price; } });
 }
 
-// Загрузка таблицы и объединение с каталогом
+// ==========================================
+// БЕЗОПАСНАЯ ЗАГРУЗКА ИЗ GOOGLE ТАБЛИЦ
+// ==========================================
 function loadCatalogFromGoogle() {
-  $('catalog-loader').style.display = 'block';
+  const loader = $('catalog-loader');
+  loader.style.display = 'block';
   
+  let isLoaded = false;
+
+  // ПРЕДОХРАНИТЕЛЬ: Если таблица не загрузилась за 3 секунды — разблокируем интерфейс
+  setTimeout(() => {
+    if (!isLoaded) {
+      isLoaded = true;
+      loader.innerHTML = '⚠️ Таблица недоступна (защита сети). Работает базовая версия.';
+      loader.style.color = '#d97706';
+      populateBrandList();
+    }
+  }, 3000);
+
   Papa.parse(GOOGLE_SHEET_URL, {
     download: true,
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
-      // Объединяем данные таблицы с уже существующими (не затирая тексты)
-      results.data.forEach(row => {
-        let b = row.Brand, m = row.Model, t = row.Trim;
-        if (!b || !m || !t) return;
-        
-        if (!CATALOG[b]) CATALOG[b] = {};
-        if (!CATALOG[b][m]) CATALOG[b][m] = {};
-        
-        let currentItem = CATALOG[b][m][t] || {};
-        
-        let pOld = row.PriceOld == "0" ? "" : row.PriceOld;
-        let pNew = row.PriceNew == "0" ? "" : row.PriceNew;
-        let cCar = row.CostCar == "0" ? "" : row.CostCar;
-        let supp = row.Support == "0" ? "" : row.Support;
-        let mcp  = row.BaseMCP == "0" ? "" : row.BaseMCP;
+      if (isLoaded) return; // Если сработал предохранитель, отменяем
+      isLoaded = true;
 
-        CATALOG[b][m][t] = {
-          priceOld: pOld || currentItem.priceOld || "",
-          priceNew: pNew || currentItem.priceNew || "",
-          costCar: cCar || currentItem.costCar || "",
-          support: supp || currentItem.support || "",
-          baseMcp: mcp || currentItem.baseMcp || "",
-          specs: row.Specs || currentItem.specs || "",
-          stdEq: row.StdEq || currentItem.stdEq || "",
-          eq: currentItem.eq || ""
-        };
-      });
+      try {
+        // Объединяем данные таблицы с уже существующими (не затирая тексты)
+        results.data.forEach(row => {
+          let b = row.Brand, m = row.Model, t = row.Trim;
+          if (!b || !m || !t) return;
+          
+          if (!CATALOG[b]) CATALOG[b] = {};
+          if (!CATALOG[b][m]) CATALOG[b][m] = {};
+          
+          let currentItem = CATALOG[b][m][t] || {};
+          
+          let pOld = row.PriceOld == "0" ? "" : row.PriceOld;
+          let pNew = row.PriceNew == "0" ? "" : row.PriceNew;
+          let cCar = row.CostCar == "0" ? "" : row.CostCar;
+          let supp = row.Support == "0" ? "" : row.Support;
+          let mcp  = row.BaseMCP == "0" ? "" : row.BaseMCP;
 
-      $('catalog-loader').style.display = 'none';
-      populateBrandList();
-      showToast('✅ Актуальные цены загружены');
+          CATALOG[b][m][t] = {
+            priceOld: pOld || currentItem.priceOld || "",
+            priceNew: pNew || currentItem.priceNew || "",
+            costCar: cCar || currentItem.costCar || "",
+            support: supp || currentItem.support || "",
+            baseMcp: mcp || currentItem.baseMcp || "",
+            specs: row.Specs || currentItem.specs || "",
+            stdEq: row.StdEq || currentItem.stdEq || "",
+            eq: currentItem.eq || ""
+          };
+        });
+
+        loader.style.display = 'none';
+        populateBrandList();
+        showToast('✅ Актуальные цены Belgee загружены');
+      } catch (e) {
+        loader.innerHTML = '❌ Ошибка структуры. Работает базовая версия.';
+        loader.style.color = '#dc2626';
+        populateBrandList();
+      }
     },
     error: function() {
-      $('catalog-loader').innerHTML = '❌ Ошибка скачивания таблицы. Показана базовая версия каталога.';
-      $('catalog-loader').style.color = '#dc2626';
-      populateBrandList(); // Загружаем хотя бы Омоду и Джейку
+      if (isLoaded) return;
+      isLoaded = true;
+      loader.innerHTML = '❌ Заблокировано браузером/AdBlock. Работает базовая версия.';
+      loader.style.color = '#dc2626';
+      populateBrandList();
     }
   });
 }
@@ -717,6 +744,8 @@ function populateBrandList() {
   selBrand.innerHTML = '<option value="">-- Выберите бренд --</option>';
   Object.keys(CATALOG).forEach(brand => selBrand.options.add(new Option(brand, brand)));
   selBrand.disabled = false;
+  $('catModel').disabled = true;
+  $('catTrim').disabled = true;
 }
 
 function updateModels() {

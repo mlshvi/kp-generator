@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Генератор КП — Максимум</title>
 
-<!-- Загружаем библиотеки асинхронно (defer), чтобы они НИКОГДА не блокировали и не вешали страницу -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
@@ -54,6 +53,10 @@ button:hover { background: #1d4ed8; }
 .oj-calc { background: #e0f2fe; border: 1px solid #bae6fd; }
 .oj-calc .margin-calc-header { color: #0369a1; }
 .oj-calc input { border: 1px solid #7dd3fc; background: #f0f9ff; }
+
+.credit-calc { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.credit-calc .margin-calc-header { color: #065f46; }
+.credit-calc input { border: 1px solid #6ee7b7; background: #f0fdf4; }
 
 .dealer-calc { background: #f3f4f6; border: 1px solid #e5e7eb; margin-bottom: 15px; margin-top: 15px;}
 .dealer-calc .margin-calc-header { color: #4b5563; }
@@ -120,6 +123,10 @@ button:hover { background: #1d4ed8; }
 .doc-price-new { font-size: 28px; font-weight: bold; line-height: 1.1; }
 .doc-discount { padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
 
+.doc-credit-badge { background: #dcfce7; color: #166534; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-top: 15px; display: none; align-items: center; justify-content: space-between; page-break-inside: avoid; }
+.doc-credit-badge-left { font-size: 12px; line-height: 1.4; }
+.doc-credit-badge-right { font-size: 18px; font-weight: bold; }
+
 .doc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; line-height: 1.4; page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px; }
 
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
@@ -137,6 +144,7 @@ button:hover { background: #1d4ed8; }
 .theme-official .doc-price-new { color: #111; }
 .theme-official .doc-discount { border: 1px solid #111; background: #fff; color: #111; border-radius: 0; }
 .theme-official .doc-photo-box img, .theme-official .doc-logo { border-radius: 0; }
+.theme-official .doc-credit-badge { background: transparent; color: #111; border: 2px solid #111; border-radius: 0; }
 
 .theme-catalog .doc-top-line { display: none; }
 .theme-catalog .doc-main { flex-direction: column-reverse; gap: 0; }
@@ -171,6 +179,7 @@ body.mobile-view .theme-catalog .doc-photo-box[data-count="2"], body.mobile-view
 body.mobile-view .theme-catalog .doc-photo-box img { max-height: 200px; }
 body.mobile-view .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
 body.mobile-view .doc-discount { align-self: flex-start; }
+body.mobile-view .doc-credit-badge { flex-direction: column; align-items: flex-start; gap: 5px; }
 body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
 body.mobile-view .doc-equip { column-count: 1; }
 
@@ -180,7 +189,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   .panel, .toolbar, .telegram-warning, #toast-container { display: none !important; }
   #document-container { box-shadow: none; margin: 0; padding: 15mm 15mm !important; width: 100%; max-width: 100%; min-height: auto !important; height: auto !important; }
   .doc-footer { margin-bottom: 0 !important; }
-  .doc-price-box, .doc-footer, .doc-photo-box, #dealerEqBlock { page-break-inside: avoid; break-inside: avoid; }
+  .doc-price-box, .doc-footer, .doc-photo-box, #dealerEqBlock, .doc-credit-badge { page-break-inside: avoid; break-inside: avoid; }
 }
 .telegram-warning { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border: 1px solid #fca5a5; text-align: center; }
 </style>
@@ -265,7 +274,7 @@ body.mobile-view .doc-equip { column-count: 1; }
 
     <div class="row" style="margin-top: 5px;">
       <input id="vPriceOld" type="text" placeholder="МЦП / Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
-      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); onPriceNewChange();">
     </div>
 
     <div class="margin-calc">
@@ -313,6 +322,37 @@ body.mobile-view .doc-equip { column-count: 1; }
         <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
         <div class="margin-result">
           <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- НОВЫЙ КРЕДИТНЫЙ КАЛЬКУЛЯТОР -->
+    <div class="margin-calc credit-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('creditCalcContent', 'creditToggleIcon')">
+        <span>💳 Кредитный калькулятор</span>
+        <span id="creditToggleIcon">▶</span>
+      </div>
+      <div id="creditCalcContent" style="display: none; padding-top: 10px;">
+        <span class="hint">Рассчитывается от цены со скидкой (Финальной)</span>
+        <div class="row">
+          <input type="number" id="creditTerm" placeholder="Срок кредита (мес)" value="84" oninput="calculateCredit('term')">
+          <input type="text" id="creditRate" placeholder="Ставка (% годовых)" value="19.9" oninput="calculateCredit('rate')">
+        </div>
+        <div class="row">
+          <div>
+            <span class="hint" style="margin-bottom: 2px;">Первоначальный взнос (₽):</span>
+            <input type="text" id="creditInitialRub" placeholder="Сумма в рублях" oninput="formatInputNumber(this); calculateCredit('rub')">
+          </div>
+          <div>
+            <span class="hint" style="margin-bottom: 2px;">Первоначальный взнос (%):</span>
+            <input type="number" id="creditInitialPct" placeholder="Процент от цены" oninput="calculateCredit('pct')">
+          </div>
+        </div>
+        <div class="margin-result">
+          <div style="margin-bottom: 10px;">Ежемесячный платеж: <span id="outCreditPayment" style="color:#065f46;">0 ₽</span></div>
+          <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1f2937; font-weight: bold;">
+            <input type="checkbox" id="showCreditInKP" onchange="renderKP()"> ☑️ Добавить блок с кредитом в КП
+          </label>
         </div>
       </div>
     </div>
@@ -421,7 +461,18 @@ body.mobile-view .doc-equip { column-count: 1; }
       <div class="doc-discount" id="outDiscount" style="display:none;">Выгода —</div>
     </div>
 
-    <div class="doc-footer">
+    <!-- БЛОК КРЕДИТА В ДОКУМЕНТЕ -->
+    <div class="doc-credit-badge" id="outCreditBadge">
+      <div class="doc-credit-badge-left">
+        <b>Комфортный автокредит:</b><br>
+        Взнос: <span id="outCreditDownpay">0</span> ₽ / Срок: <span id="outCreditTerm">0</span> мес.
+      </div>
+      <div class="doc-credit-badge-right">
+        от <span id="outCreditFinalPay">0</span> ₽/мес
+      </div>
+    </div>
+
+    <div class="doc-footer" style="margin-top: 15px;">
       <div>
         <strong style="display:block; margin-bottom:5px;">Ваш менеджер:</strong>
         <span id="outMgrName">Имя менеджера</span><br>
@@ -567,437 +618,7 @@ const DEALER_DOPS_BASE = [
   { id: 'bdop1', name: 'Пакет "Оклейка капота (защитной пленкой)"', price: 43350 }, { id: 'bdop2', name: 'Пакет "Оклейка под ручками дверей"', price: 8390 },
   { id: 'bdop3', name: 'Пакет "Оклейка полоса на капот"', price: 24450 }, { id: 'bdop4', name: 'Пакет "Оклейка полоса на крышу"', price: 18900 },
   { id: 'bdop5', name: 'Пакет "Оклейка порогов 4 шт"', price: 12780 }, { id: 'bdop6', name: 'Пакет "Оклейка фар (защитной пленкой)"', price: 15890 },
-  { id: 'bdop7', name: 'Пакет "Защитное керамическое покрытие (1 слой)"', price: 78600 }, { id: 'bdop8', name: 'Пакет "Тонировка легкового авто (5% / 15%)"', price: 19240 },
-  { id: 'bdop9', name: 'Пакет "Шумоизоляция дверей I"', price: 30260 }, { id: 'bdop10', name: 'Ковры 3D в салон (полиуретан)', price: 3554 },
-  { id: 'bdop11', name: 'Ковер в багажник с защитой ТЭП', price: 3458 }, { id: 'bdop12', name: 'Пакет "Защита двигателя"', price: 12623 },
-  { id: 'bdop13', name: 'Пакет "Сетка защитная в бампер"', price: 9500 }, { id: 'bdop14', name: 'Подкрылок с шумоизоляцией', price: 29089 },
-  { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
-];
-
-function compressImage(file, callback) {
-  const reader = new FileReader(); reader.readAsDataURL(file);
-  reader.onload = e => {
-    const img = new Image(); img.src = e.target.result;
-    img.onload = () => {
-      const canvas = document.createElement('canvas'); const MAX_WIDTH = 1200;
-      let width = img.width; let height = img.height;
-      if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
-      canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-      callback(canvas.toDataURL('image/jpeg', 0.8));
-    };
-  };
-}
-
-function copyTextForMessenger() {
-  let car = val('vCarName') || 'Автомобиль'; let pkg = val('vCarPkg') ? `(${val('vCarPkg')})` : '';
-  let price = $('outPriceNew') ? $('outPriceNew').textContent : ''; let mgr = val('vMgrName') || 'Менеджер'; let phone = val('vMgrPhone') || '';
-  let text = `Здравствуйте! Отправляю вам Коммерческое предложение.\n\n🚗 Автомобиль: ${car} ${pkg}\n💰 Специальная цена: ${price}\n\nС уважением, ${mgr} ${phone}`;
-  navigator.clipboard.writeText(text).then(() => showToast('💬 Текст скопирован! Вставьте в WhatsApp.'));
-}
-
-function toggleCalc(contentId, iconId) {
-  const content = $(contentId); const icon = $(iconId);
-  if (!content || !icon) return;
-  if (content.style.display === 'none' || content.style.display === '') { content.style.display = 'block'; icon.textContent = '▼'; } 
-  else { content.style.display = 'none'; icon.textContent = '▶'; }
-}
-
-function calculateMargin() {
-  let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
-  if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
-  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
-  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
-  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
-  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
-  if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
-  if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
-}
-
-function calculateOjMargin() {
-  let factPaid = getNum(val('ojFactPaid')); let basePrice = getNum(val('ojBasePrice'));
-  let discountInput = val('ojDiscount').replace(',', '.'); let discount = parseFloat(discountInput) || 0; 
-  if (!factPaid && !basePrice) { if($('outOjPremium')) $('outOjPremium').innerHTML = '0 ₽'; return; }
-  let preCalc = basePrice * (1 - (discount / 100)); let premium = Math.round(factPaid - preCalc);
-  let color = premium < 0 ? '#dc2626' : '#166534';
-  if ($('outOjPremium')) $('outOjPremium').innerHTML = `<span style="color:${color}">${premium.toLocaleString('ru-RU')} ₽</span>`;
-}
-
-function toggleTISupport() {
-  const cb = $('useTISupport'); if (!cb) return;
-  if (cb.checked) {
-    setVal('calcSupport', currentCatalogSupport);
-    if (currentCatalogSupport) formatInputNumber($('calcSupport'));
-  } else { setVal('calcSupport', ''); }
-  calculateMargin();
-}
-
-function openDopsModal() { renderDopsUI(); const m = $('dopsModal'); if(m) m.classList.add('active'); }
-function closeDopsModal() { const m = $('dopsModal'); if(m) m.classList.remove('active'); renderKP(); }
-
-function addCustomDop() {
-  const name = val('newDopName'); const price = getNum(val('newDopPrice'));
-  if (!name) return showToast('❌ Введите название опции', true);
-  const newId = 'cdop_' + Date.now(); 
-  db.customDops.push({ id: newId, name: name, price: price }); saveDB(); 
-  setVal('newDopName', ''); setVal('newDopPrice', '');
-  renderDopsUI(); setTimeout(() => { let cb = $(newId); if(cb) { cb.checked = true; renderKP(); } }, 50);
-}
-
-function removeCustomDop(id) { 
-  if (confirm('Удалить эту опцию навсегда?')) { db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); } 
-}
-
-function renderDopsUI() {
-  const list = $('modal-dops-list'); if (!list) return;
-  let tempState = {}; 
-  document.querySelectorAll('.dop-check').forEach(cb => { 
-    let prInput = $(cb.id + '_price');
-    tempState[cb.id] = { checked: cb.checked, price: prInput ? prInput.value : 0 }; 
-  });
-  const validCustomDops = (db.customDops || []).filter(d => d && d.id);
-  const allDops = [...validCustomDops, ...DEALER_DOPS_BASE];
-  list.innerHTML = allDops.map(d => {
-    const isCustom = d.id.startsWith('cdop_');
-    return `<div class="dop-row dop-item"><label class="dop-label"><input type="checkbox" class="dop-check" id="${d.id}" data-name='${d.name}' onchange="renderKP()"><span style="${isCustom ? 'color: #1d4ed8; font-weight: bold;' : ''}">${d.name}</span></label><div style="display:flex; align-items:center;"><input type="number" class="dop-price-input dop-price" id="${d.id}_price" value="${d.price}" oninput="renderKP()">${isCustom ? `<button class="del-dop-btn" onclick="removeCustomDop('${d.id}')" title="Удалить">×</button>` : '<div style="width:36px"></div>'}</div></div>`;
-  }).join('');
-  document.querySelectorAll('.dop-check').forEach(cb => { 
-    if (tempState[cb.id]) { cb.checked = tempState[cb.id].checked; let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; } 
-  });
-}
-
-function makeClean(str) { return (str || "").toLowerCase().replace(/[хХ]/g, 'x').replace(/\s+/g, '').replace(/plus/g, '+'); }
-
-// ВНУТРЕННИЙ ПАРСЕР ТАБЛИЦ (БЕЗ ЗАВИСИМОСТЕЙ ОТ ИНТЕРНЕТА)
-function parseCSV(csv) {
-  let rows = []; let row = []; let cur = ''; let inQuote = false;
-  for (let i = 0; i < csv.length; i++) {
-    let char = csv[i];
-    if (inQuote) {
-      if (char === '"') {
-        if (csv[i+1] === '"') { cur += '"'; i++; } else { inQuote = false; }
-      } else { cur += char; }
-    } else {
-      if (char === '"') { inQuote = true; }
-      else if (char === ',') { row.push(cur); cur = ''; }
-      else if (char === '\n' || char === '\r') {
-        row.push(cur); rows.push(row); row = []; cur = '';
-        if (char === '\r' && csv[i+1] === '\n') i++;
-      } else { cur += char; }
-    }
-  }
-  row.push(cur); rows.push(row);
-  let headers = rows[0].map(h => h.trim().toLowerCase());
-  let data = [];
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i].length === 1 && rows[i][0].trim() === '') continue;
-    let obj = {};
-    for (let j = 0; j < headers.length; j++) { obj[headers[j]] = rows[i][j] ? rows[i][j].trim() : ''; }
-    data.push(obj);
-  }
-  return data;
-}
-
-function loadCatalogFromGoogle() {
-  const loader = $('catalog-loader'); if (!loader) return;
-  fetch(DIRECT_URL)
-    .then(response => { if (!response.ok) throw new Error('Net Error'); return response.text(); })
-    .then(csvText => {
-      if (csvText.trim().startsWith('<')) { loader.innerHTML = '⚠️ Сеть блокирует таблицу. Работает базовая версия.'; loader.style.color = '#d97706'; return; }
-      try {
-        let parsedData = parseCSV(csvText);
-        parsedData.forEach(row => {
-          let nr = {};
-          for (let k in row) {
-            let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
-            nr[cleanK] = row[k];
-          }
-
-          function parsePrice(val) {
-              if (!val) return "";
-              let str = String(val).replace(/\s+/g, '').replace(/₽/g, '').replace(/руб/gi, '');
-              str = str.replace(/[,.]\d{1,2}$/, ''); 
-              let digits = str.replace(/\D/g, ''); 
-              return (digits && digits !== "0") ? digits : "";
-          }
-
-          function findValue(keywords) {
-              for (let f of keywords) {
-                  for (let k in nr) { if (k === f || k.includes(f)) { let val = parsePrice(nr[k]); if (val) return val; } }
-              } return "";
-          }
-
-          function findText(keywords) {
-              for (let f of keywords) {
-                  for (let k in nr) { if (k === f || k.includes(f)) { if (nr[k] && String(nr[k]).trim() !== "") return String(nr[k]).trim(); } }
-              } return "";
-          }
-
-          let bRaw = findText(['brand', 'бренд', 'марка']);
-          let mRaw = findText(['model', 'модель']);
-          let tRaw = findText(['trim', 'комплектация']);
-          if (!bRaw || !mRaw || !tRaw) return;
-
-          let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
-          let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw; if (!CATALOG[bKey]) CATALOG[bKey] = {};
-          let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw; if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
-          let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw; let existing = CATALOG[bKey][mKey][tKey] || {};
-
-          let pOld = findValue(['priceold', 'мцп', 'мпц', 'базовая', 'старая', 'прайс', 'розничная']);
-          let pNew = findValue(['pricenew', 'спец', 'скидк', 'новая', 'финал']);
-          let cCar = findValue(['costcar', 'себес', 'закуп']);
-          let supp = findValue(['support', 'поддерж', 'трейд']);
-          let mcp  = findValue(['basemcp', 'мцпюр']) || pOld; 
-
-          CATALOG[bKey][mKey][tKey] = {
-            priceOld: pOld || existing.priceOld || "", priceNew: pNew || existing.priceNew || "",
-            costCar: cCar || existing.costCar || "", support: supp || existing.support || "", baseMcp: mcp || existing.baseMcp || "",
-            specs: findText(['specs', 'характеристики']) || existing.specs || "", stdEq: findText(['stdeq', 'оснащение', 'базовое']) || existing.stdEq || ""
-          };
-        });
-
-        loader.style.display = 'none';
-        let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
-        populateBrandList();
-        if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
-        if (curModel) { setVal('catModel', curModel); updateTrims(); }
-        if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
-
-      } catch (e) {
-         loader.innerHTML = '⚠️ Ошибка структуры таблицы. Работает базовая версия.'; loader.style.color = '#d97706';
-      }
-    })
-    .catch(err => {
-      loader.innerHTML = '❌ Нет подключения к таблице. Работает оффлайн база.'; loader.style.color = '#dc2626';
-    });
-}
-
-function populateBrandList() {
-  const selBrand = $('catBrand'); if (!selBrand) return;
-  selBrand.innerHTML = '<option value="">-- Выберите бренд --</option>';
-  Object.keys(CATALOG).forEach(brand => selBrand.options.add(new Option(brand, brand)));
-}
-
-function updateModels() {
-  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
-  if (!selBrand || !selModel || !selTrim) return;
-  selModel.innerHTML = '<option value="">-- Выберите модель --</option>'; selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; selTrim.disabled = true;
-  if (selBrand.value && CATALOG[selBrand.value]) { 
-      selModel.disabled = false; Object.keys(CATALOG[selBrand.value]).forEach(model => selModel.options.add(new Option(model, model))); 
-  } else { selModel.disabled = true; }
-}
-
-function updateTrims() {
-  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
-  if (!selBrand || !selModel || !selTrim) return;
-  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
-  if (selModel.value && CATALOG[selBrand.value] && CATALOG[selBrand.value][selModel.value]) { 
-      selTrim.disabled = false; Object.keys(CATALOG[selBrand.value][selModel.value]).forEach(trim => selTrim.options.add(new Option(trim, trim))); 
-  } else { selTrim.disabled = true; }
-}
-
-function applyCatalog() {
-  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
-  if (!selTrim || !selTrim.value || !CATALOG[selBrand.value] || !CATALOG[selBrand.value][selModel.value]) return;
-  const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
-  if (!data) return;
-  
-  setVal('vCarName', `${selBrand.value} ${selModel.value}`); setVal('vCarPkg', selTrim.value); setVal('vCarVIN', ''); setVal('vCarColor', '');
-  setVal('vCarSpecs', data.specs || ""); setVal('vCarStdEq', data.stdEq || ""); setVal('vCarEq', '');
-  
-  setVal('vPriceOld', data.priceOld || ""); if(data.priceOld) formatInputNumber($('vPriceOld'));
-  setVal('vPriceNew', data.priceNew || ""); if(data.priceNew) formatInputNumber($('vPriceNew'));
-  
-  setVal('calcCostCar', data.costCar || ""); if(data.costCar) formatInputNumber($('calcCostCar'));
-  setVal('ojBasePrice', data.baseMcp || ""); if(data.baseMcp) formatInputNumber($('ojBasePrice'));
-  
-  currentCatalogSupport = data.support || ""; 
-  const tiCb = $('useTISupport'); if (tiCb) tiCb.checked = false; 
-  setVal('calcSupport', ""); 
-  
-  document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-  db.imgCars = []; saveDB(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
-  showToast("✅ Автомобиль загружен из каталога");
-}
-
-function normalizeCarKey(name) { return (name || '').toLowerCase().replace(/\s+/g, '').replace(/plus/g, '+'); }
-function onCarNameInput() { db.imgCars = []; saveDB(); renderGallery(); renderKP(); }
-
-function switchTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  const t = $(tabId); if (t) t.classList.add('active'); 
-  if (btn) btn.classList.add('active'); 
-  renderLists();
-}
-
-const vLogo = $('vLogoImg');
-if (vLogo) {
-  vLogo.addEventListener('change', function() {
-    if (!this.files || !this.files.length) return; 
-    compressImage(this.files[0], compressed => { db.imgLogo = compressed; saveDB(); renderKP(); });
-  });
-}
-
-const vImg = $('vCarImg');
-if (vImg) {
-  vImg.addEventListener('change', async function () {
-    if (!this.files || !this.files.length) return; 
-    const files = Array.from(this.files).slice(0, 3); let newPhotos = [];
-    for(let file of files) { await new Promise(res => { compressImage(file, compressed => { newPhotos.push(compressed); res(); }); }); }
-    db.imgCars = [...(db.imgCars || []), ...newPhotos].slice(0, 3); saveDB(); renderGallery(); renderKP(); this.value = '';
-  });
-}
-
-function renderGallery() {
-  const gal = $('mini-gallery'); if(!gal) return;
-  if(!db.imgCars || db.imgCars.length === 0) { gal.innerHTML = ''; return; }
-  gal.innerHTML = db.imgCars.map((img, i) => `
-    <div style="position:relative; width:65px; height:65px; border-radius:6px; overflow:hidden; border:1px solid #d1d5db; flex-shrink:0;">
-      <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
-      <button onclick="removePhoto(${i})" style="position:absolute; top:0; right:0; background:rgba(220,38,38,0.9); color:#fff; border:none; width:22px; height:22px; font-size:14px; cursor:pointer; margin:0; padding:0; border-radius:0 0 0 4px;">×</button>
-    </div>
-  `).join('');
-}
-
-function removePhoto(idx) { if (!db.imgCars) return; db.imgCars.splice(idx, 1); saveDB(); renderGallery(); renderKP(); }
-
-function renderKP() {
-  const dc = $('document-container');
-  if (dc) dc.className = `theme-${val('vTheme') || 'premium'}`;
-  
-  if ($('outDName')) $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
-  if ($('outDAddr')) $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
-  if ($('outDContacts')) $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
-
-  let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
-  if ($('outLogo')) $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
-
-  if ($('outNum')) $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
-  if ($('outToday')) $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
-  if ($('outValid')) $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
-
-  if ($('outCarName')) $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
-  if ($('outCarPkg')) $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
-
-  let specsArr = [];
-  if (val('vCarVIN')) specsArr.push(`VIN-номер: ${val('vCarVIN')}`);
-  if (val('vCarColor')) specsArr.push(`Цвет кузова: ${val('vCarColor')}`);
-  if (val('vCarSpecs')) specsArr.push(val('vCarSpecs'));
-  if ($('outCarSpecs')) $('outCarSpecs').textContent = specsArr.join('\n') || 'Характеристики не указаны';
-
-  let eqList = val('vCarEq').split('\n').filter(Boolean);
-  if ($('outCarEq')) $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
-
-  let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
-  if ($('stdEqBlock') && $('outCarStdEq')) {
-      if (stdEqList.length > 0) { $('stdEqBlock').style.display = 'block'; $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join(''); } 
-      else { $('stdEqBlock').style.display = 'none'; }
-  }
-
-  let dopSum = 0; let selectedCount = 0; let dopItems = [];
-  document.querySelectorAll('.dop-check').forEach(cb => {
-    if (cb.checked) { 
-        let prInput = $(cb.id + '_price'); 
-        let p = prInput ? (parseInt(prInput.value) || 0) : 0; 
-        dopSum += p; selectedCount++; 
-        dopItems.push(`<b>${cb.dataset.name}</b> — ${p.toLocaleString('ru-RU')} ₽`); 
-    }
-  });
-
-  const sumLabel = $('dops-summary');
-  if (sumLabel) {
-      if (selectedCount > 0) { sumLabel.style.display = 'block'; sumLabel.textContent = `Выбрано опций: ${selectedCount} (на ${dopSum.toLocaleString('ru-RU')} ₽)`; } 
-      else { sumLabel.style.display = 'none'; }
-  }
-
-  if ($('dealerEqBlock') && $('outDealerEq')) {
-      if (dopItems.length > 0) { $('dealerEqBlock').style.display = 'block'; $('outDealerEq').innerHTML = dopItems.map(i => `<li>${i}</li>`).join(''); } 
-      else { $('dealerEqBlock').style.display = 'none'; }
-  }
-
-  let baseOldNum = getNum(val('vPriceOld')); let baseNewNum = getNum(val('vPriceNew'));
-  let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum; let finalNew = baseNewNum; 
-
-  if ($('outPriceOld')) $('outPriceOld').textContent = baseOldNum > 0 ? formatRub(finalOld) : "—";
-  if ($('outPriceNew')) $('outPriceNew').textContent = baseNewNum > 0 ? formatRub(finalNew) : "—";
-
-  let diff = finalOld - finalNew;
-  if ($('outDiscount')) {
-      if (diff > 0 && baseOldNum > 0 && baseNewNum > 0) { $('outDiscount').textContent = `Выгода ${diff.toLocaleString('ru-RU')} ₽`; $('outDiscount').style.display = 'block'; } 
-      else { $('outDiscount').style.display = 'none'; }
-  }
-
-  if ($('outMgrName')) $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера'; 
-  if ($('outMgrPhone')) $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон'; 
-  if ($('outMgrEmail')) $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
-
-  const carKey = normalizeCarKey(val('vCarName')); const photoBox = $('outCarImg'); let imagesToRender = [];
-  if (db.imgCars && db.imgCars.length > 0) { imagesToRender = db.imgCars; } else if (carKey && AUTO_IMAGES[carKey]) { imagesToRender = [AUTO_IMAGES[carKey]]; }
-  if (val('vTheme') !== 'catalog' && imagesToRender.length > 0) { imagesToRender = [imagesToRender[0]]; }
-  if (photoBox) {
-      if (imagesToRender.length > 0) { photoBox.setAttribute('data-count', imagesToRender.length); photoBox.innerHTML = imagesToRender.map(img => `<img src="${img}">`).join(''); } 
-      else { photoBox.setAttribute('data-count', 0); photoBox.innerHTML = '<span>Фото авто</span>'; }
-  }
-}
-
-function autoNumDate() {
-  setVal('vNum', `${new Date().getFullYear()}-${String(db.counter++).padStart(3, '0')}`);
-  let d = new Date(); d.setDate(d.getDate() + 7); setVal('vDate', `до ${d.toLocaleDateString('ru-RU')}`); saveDB(); renderKP();
-}
-
-function confirmClear() {
-  if(confirm("Очистить все данные в анкете?")) {
-    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
-    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-    db.imgCars = []; const cb = $('useTISupport'); if(cb) cb.checked = false; currentCatalogSupport = "";
-    saveDB(); renderGallery(); renderKP(); const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
-    calculateMargin(); calculateOjMargin(); showToast("Анкета очищена!");
-  }
-}
-
-function saveItem(type) {
-  if (type === 'mgrs') {
-    if (!val('mName')) return showToast("❌ Введите имя менеджера", true);
-    db.mgrs.push({ n: val('mName'), p: val('mPhone'), e: val('mEmail') }); ['mName','mPhone','mEmail'].forEach(id => setVal(id, ''));
-  } else if (type === 'tpls') {
-    if (!val('tName')) return showToast("❌ Назовите шаблон", true); let savedDops = [];
-    document.querySelectorAll('.dop-check').forEach(cb => { 
-        if (cb.checked) {
-            let pr = $(cb.id + '_price');
-            savedDops.push({ id: cb.id, price: pr ? pr.value : 0, name: cb.dataset.name }); 
-        }
-    });
-    db.tpls.push({
-      title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'), cn: val('vCarName'), cp: val('vCarPkg'), cvin: val('vCarVIN'), ccol: val('vCarColor'), cs: val('vCarSpecs'),
-      ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'), mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail'), dops: savedDops
-    });
-    setVal('tName', '');
-  }
-  saveDB(); renderLists(); showToast("✅ Сохранено!");
-}
-
-function loadItem(type, idx) {
-  let i = db[type][idx]; if (!i) return;
-  if (type === 'mgrs') { setVal('vMgrName', i.n); setVal('vMgrPhone', i.p); setVal('vMgrEmail', i.e); } 
-  else if (type === 'tpls') {
-    setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp); setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarVIN', i.cvin); setVal('vCarColor', i.ccol);
-    setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn); setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
-    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-    if (i.dops && Array.isArray(i.dops)) {
-      let needsReRender = false;
-      i.dops.forEach(d => { if (!document.getElementById(d.id) && d.id.startsWith('cdop_')) { db.customDops.push({ id: d.id, name: d.name || 'Опция', price: d.price }); needsReRender = true; } });
-      if(needsReRender) { saveDB(); renderDopsUI(); }
-      i.dops.forEach(d => { let cb = document.getElementById(d.id); let pr = document.getElementById(d.id + '_price'); if (cb) cb.checked = true; if (pr) pr.value = d.price; });
-    }
-    ['vPriceOld', 'vPriceNew'].forEach(id => { let el = $(id); if(el && el.value) formatInputNumber(el); });
-  }
-  switchTab('tab-data', document.querySelector('.tab')); renderKP(); showToast("✅ Данные загружены!");
-}
-
-function delItem(type, idx) { if (confirm('Удалить навсегда?')) { db[type].splice(idx, 1); saveDB(); renderLists(); } }
-
-function renderLists() {
-  const lm = $('list-mgrs'); if (lm && db.mgrs) lm.innerHTML = db.mgrs.map((m, i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
+  { id:" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
   const lt = $('list-tpls'); if (lt && db.tpls) lt.innerHTML = db.tpls.map((t, i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
 }
 
@@ -1045,7 +666,7 @@ function downloadImage() {
 }
 
 try {
-  populateBrandList(); renderDopsUI(); renderLists(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
+  populateBrandList(); renderDopsUI(); renderLists(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin(); calculateCredit('price');
 } catch (error) {
   console.error(error); localStorage.removeItem('kp_db_v24'); alert("Сброс кэша. Обновите страницу."); location.reload();
 }

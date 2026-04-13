@@ -55,6 +55,11 @@ button:hover { background: #1d4ed8; }
 .oj-calc .margin-calc-header { color: #0369a1; }
 .oj-calc input { border: 1px solid #7dd3fc; background: #f0f9ff; }
 
+/* КРЕДИТНЫЙ КАЛЬКУЛЯТОР */
+.credit-calc { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.credit-calc .margin-calc-header { color: #065f46; }
+.credit-calc input { border: 1px solid #6ee7b7; background: #f0fdf4; }
+
 .dealer-calc { background: #f3f4f6; border: 1px solid #e5e7eb; margin-bottom: 15px; margin-top: 15px;}
 .dealer-calc .margin-calc-header { color: #4b5563; }
 .dealer-calc input { border: 1px solid #d1d5db; background: #fff; }
@@ -120,6 +125,10 @@ button:hover { background: #1d4ed8; }
 .doc-price-new { font-size: 28px; font-weight: bold; line-height: 1.1; }
 .doc-discount { padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
 
+.doc-credit-badge { background: #dcfce7; color: #166534; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-top: 15px; display: none; align-items: center; justify-content: space-between; page-break-inside: avoid; }
+.doc-credit-badge-left { font-size: 12px; line-height: 1.4; }
+.doc-credit-badge-right { font-size: 18px; font-weight: bold; }
+
 .doc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 12px; line-height: 1.4; page-break-inside: avoid; break-inside: avoid; margin-bottom: 30px; }
 
 .theme-premium .doc-top-line { display: block; background: linear-gradient(90deg, #1f2937, #2563eb); }
@@ -137,6 +146,7 @@ button:hover { background: #1d4ed8; }
 .theme-official .doc-price-new { color: #111; }
 .theme-official .doc-discount { border: 1px solid #111; background: #fff; color: #111; border-radius: 0; }
 .theme-official .doc-photo-box img, .theme-official .doc-logo { border-radius: 0; }
+.theme-official .doc-credit-badge { background: transparent; color: #111; border: 2px solid #111; border-radius: 0; }
 
 .theme-catalog .doc-top-line { display: none; }
 .theme-catalog .doc-main { flex-direction: column-reverse; gap: 0; }
@@ -171,6 +181,7 @@ body.mobile-view .theme-catalog .doc-photo-box[data-count="2"], body.mobile-view
 body.mobile-view .theme-catalog .doc-photo-box img { max-height: 200px; }
 body.mobile-view .doc-price-box { flex-direction: column; align-items: flex-start; gap: 10px; }
 body.mobile-view .doc-discount { align-self: flex-start; }
+body.mobile-view .doc-credit-badge { flex-direction: column; align-items: flex-start; gap: 5px; }
 body.mobile-view .doc-footer { grid-template-columns: 1fr; gap: 20px; }
 body.mobile-view .doc-equip { column-count: 1; }
 
@@ -180,7 +191,7 @@ body.mobile-view .doc-equip { column-count: 1; }
   .panel, .toolbar, .telegram-warning, #toast-container { display: none !important; }
   #document-container { box-shadow: none; margin: 0; padding: 15mm 15mm !important; width: 100%; max-width: 100%; min-height: auto !important; height: auto !important; }
   .doc-footer { margin-bottom: 0 !important; }
-  .doc-price-box, .doc-footer, .doc-photo-box, #dealerEqBlock { page-break-inside: avoid; break-inside: avoid; }
+  .doc-price-box, .doc-footer, .doc-photo-box, #dealerEqBlock, .doc-credit-badge { page-break-inside: avoid; break-inside: avoid; }
 }
 .telegram-warning { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border: 1px solid #fca5a5; text-align: center; }
 </style>
@@ -265,7 +276,7 @@ body.mobile-view .doc-equip { column-count: 1; }
 
     <div class="row" style="margin-top: 5px;">
       <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
-      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin(); calculateCredit('price');">
     </div>
 
     <div class="margin-calc">
@@ -313,6 +324,36 @@ body.mobile-view .doc-equip { column-count: 1; }
         <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
         <div class="margin-result">
           <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="margin-calc credit-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('creditCalcContent', 'creditToggleIcon')">
+        <span>💳 Кредитный калькулятор</span>
+        <span id="creditToggleIcon">▶</span>
+      </div>
+      <div id="creditCalcContent" style="display: none; padding-top: 10px;">
+        <span class="hint">Рассчитывается от цены со скидкой (Финальной)</span>
+        <div class="row">
+          <input type="number" id="creditTerm" placeholder="Срок кредита (мес)" value="84" oninput="calculateCredit('term')">
+          <input type="text" id="creditRate" placeholder="Ставка (% годовых)" value="19.9" oninput="calculateCredit('rate')">
+        </div>
+        <div class="row">
+          <div>
+            <span class="hint" style="margin-bottom: 2px;">Первоначальный взнос (₽):</span>
+            <input type="text" id="creditInitialRub" placeholder="Сумма в рублях" oninput="formatInputNumber(this); calculateCredit('rub')">
+          </div>
+          <div>
+            <span class="hint" style="margin-bottom: 2px;">Первоначальный взнос (%):</span>
+            <input type="number" id="creditInitialPct" placeholder="Процент от цены" oninput="calculateCredit('pct')">
+          </div>
+        </div>
+        <div class="margin-result">
+          <div style="margin-bottom: 10px;">Ежемесячный платеж: <span id="outCreditPayment" style="color:#065f46;">0 ₽</span></div>
+          <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1f2937; font-weight: bold;">
+            <input type="checkbox" id="showCreditInKP" onchange="renderKP()"> ☑️ Добавить блок с кредитом в КП
+          </label>
         </div>
       </div>
     </div>
@@ -421,6 +462,16 @@ body.mobile-view .doc-equip { column-count: 1; }
       <div class="doc-discount" id="outDiscount" style="display:none;">Выгода —</div>
     </div>
 
+    <div class="doc-credit-badge" id="outCreditBadge">
+      <div class="doc-credit-badge-left">
+        <b>Комфортный автокредит:</b><br>
+        Взнос: <span id="outCreditDownpay">0</span> ₽ / Срок: <span id="outCreditTerm">0</span> мес.
+      </div>
+      <div class="doc-credit-badge-right">
+        от <span id="outCreditFinalPay">0</span> ₽/мес
+      </div>
+    </div>
+
     <div class="doc-footer">
       <div>
         <strong style="display:block; margin-bottom:5px;">Ваш менеджер:</strong>
@@ -457,11 +508,7 @@ body.mobile-view .doc-equip { column-count: 1; }
     <button onclick="closeDopsModal()" style="margin-top: 10px; margin-bottom: 0;">Готово</button>
   </div>
 </div>
-
 <script>
-// ==========================================
-// 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
-// ==========================================
 const $ = id => document.getElementById(id);
 const val = id => { const el = $(id); return el ? el.value.trim() : ''; };
 const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
@@ -485,9 +532,6 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
-// ==========================================
-// 2. БРОНЕБОЙНАЯ ЗАГРУЗКА БАЗЫ ДАННЫХ (Защита от сбоя кэша)
-// ==========================================
 let db;
 try {
   db = JSON.parse(localStorage.getItem('kp_db_v24'));
@@ -496,7 +540,6 @@ try {
   db = {};
 }
 
-// Принудительно восстанавливаем все массивы, если они сломались
 if (!Array.isArray(db.mgrs)) db.mgrs = [];
 if (!Array.isArray(db.tpls)) db.tpls = [];
 if (!Array.isArray(db.imgCars)) db.imgCars = [];
@@ -506,9 +549,6 @@ if (typeof db.imgLogo !== 'string') db.imgLogo = '';
 
 const saveDB = () => localStorage.setItem('kp_db_v24', JSON.stringify(db));
 
-// ==========================================
-// 3. БАЗА ТЕКСТОВ И КОМПЛЕКТАЦИЙ
-// ==========================================
 const DIRECT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv&_nocache=" + Date.now();
 
 const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
@@ -526,7 +566,7 @@ const JAECOO_J6_COMFORT_EQ = "Светодиодная оптика (спере�
 const JAECOO_J6_PRESTIGE_EQ = "Светодиодная оптика с автоматическим переключением дальнего света (IHC)\nАлюминиевые литые диски 18\" и панорамная крыша\nОтделка салона из искусственной кожи и многослойные (акустические) передние стекла\nОгромная мультимедиа 13.2\", 8 динамиков и беспроводная зарядка для смартфона\nДвухзонный климат-контроль и вентиляция передних сидений\nПолный зимний пакет: подогрев всех сидений, руля, лобового стекла и форсунок\nЭлектрорегулировка сидений водителя (6 направлений) и пассажира (4 направления)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника (свободные руки)\nСистема камер кругового обзора 540° + передние и задние парктроники\nПолный комплекс активной безопасности ADAS (адаптивный круиз ACC, автоторможение, контроль слепых зон, удержание в полосе)\n6 подушек безопасности (фронтальные, боковые и шторки)";
 const JAECOO_J7_FWD_SPECS = "Двигатель: 1.6 Турбо (150 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.7 сек\nРасход (смешанный): 7.1 л / 100 км (АИ-92)\nДорожный просвет: 196 мм\nГабариты: 4600 × 1898 × 1680 мм\nОбъем багажника: 500 л\nТопливный бак: 51 л";
 const JAECOO_J7_AWD_SPECS = "Двигатель: 1.6 Турбо (186 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Полный\nРазгон 0-100 км/ч: 9.0 сек\nРасход (смешанный): 8.1 л / 100 км (АИ-92)\nДорожный просвет: 186 мм\nГабариты: 4600 × 1898 × 1680 мм\nОбъем багажника: 500 л\nТопливный бак: 57 л";
-const JAECOO_J7_COMFORT_EQ = "Светодиодная оптика (фары, ДХО, фонари) с датчиками света и дождя\nЛегкосплавные алюминиевые диски 18\"\nОтделка салона из искусственной кожи (черная) и акустическое лобовое стекло\nЦифровая приборная панель 10.25\" и большой сенсорный дисплей 13.2\" (CarPlay/Android Auto)\nБеспроводная зарядка для смартфона и аудиосистема на 6 динамиков\nДвухзонный климат-контроль и стандартный круиз-контроль\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла и форсунок\nВодительское сиденье с электрорегулировкой (в 6 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника (без помощи рук)\nСистема камер кругового обзора 540° + передние и задние датчики парковки\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const JAECOO_J7_COMFORT_EQ = "Светодиодная оптика (фары, ДХО, фонари) с датчиками света и дождя\nЛегкосплав алюминиевые диски 18\"\nОтделка салона из искусственной кожи (черная) и акустическое лобовое стекло\nЦифровая приборная панель 10.25\" и большой сенсорный дисплей 13.2\" (CarPlay/Android Auto)\nБеспроводная зарядка для смартфона и аудиосистема на 6 динамиков\nДвухзонный климат-контроль и стандартный круиз-контроль\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла и форсунок\nВодительское сиденье с электрорегулировкой (в 6 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника (без помощи рук)\nСистема камер кругового обзора 540° + передние и задние датчики парковки\n6 подушек безопасности (фронтальные, боковые и шторки)";
 const JAECOO_J7_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (с автопереключением дальнего света IHC)\nЛегкосплавные алюминиевые диски 18\" и панорамный люк\nОтделка салона из искусственной кожи (черная) и акустическое лобовое стекло\nЦифровая приборная панель 10.25\" и большой сенсорный дисплей 13.2\" (CarPlay/Android Auto)\nБеспроводная зарядка для смартфона и аудиосистема на 8 динамиков\nДвухзонный климат-контроль, вентиляция передних сидений и подогрев сидений 2-го ряда\nПолный зимний пакет: подогрев всех сидений, руля, лобового стекла и форсунок\nЭлектрорегулировка сидений водителя (в 6 направлениях) и пассажира (в 4 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника\nСистема камер кругового обзора 540° + передние и задние датчики парковки\nИнтеллектуальный адаптивный круиз-контроль (ACC) и полный пакет умных помощников (ADAS)\n6 подушек безопасности (фронтальные, боковые и шторки)";
 const JAECOO_J8_SPECS = "Двигатель: 2.0 Турбо (249 л.с., 385 Нм)\nКПП: 7-ступенчатый робот\nПривод: Полный\nРазгон 0-100 км/ч: 8.5 сек\nРасход (смешанный): 8.1 л / 100 км (АИ-95)\nДорожный просвет: 210 мм\nГабариты: 4820 × 1930 × 1710 мм\nОбъем багажника: 717 л (до 2021 л)\nТопливный бак: 65 л";
 const JAECOO_J8_COMFORT_EQ = "Полностью светодиодная оптика с автодальним светом и динамическими поворотниками\nАлюминиевые литые диски 20\" и панорамная крыша с люком\nОтделка салона искусственной кожей, акустическое лобовое и многослойные передние стекла\nИзогнутый сдвоенный экран (панель приборов 12\" + мультимедиа 12\") и проекционный дисплей (HUD)\nАудиосистема на 12 динамиков и беспроводная зарядка\nДвухзонный климат-контроль и вентиляция передних сидений\nЭлектрорегулировка передних сидений (водительское с памятью)\nПолный «Теплый пакет» (подогрев лобового, руля, всех сидений, форсунок)\nАдаптивная подвеска CDC (с регулируемой жесткостью)\nСистема камер кругового обзора 540° + передние и задние парктроники\nИнтеллектуальный адаптивный круиз-контроль (ACC) и полный пакет умных помощников (ADAS)\n6 подушек безопасности (включая шторки безопасности)";
@@ -565,544 +605,548 @@ const BASE_CATALOG = {
     "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
   }
 };
-
-let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
-let currentCatalogSupport = ""; 
-
-function checkMobile() { if (window.innerWidth <= 900) document.body.classList.add('mobile-view'); else document.body.classList.remove('mobile-view'); }
-window.addEventListener('resize', checkMobile); checkMobile();
-
-const DEALER_SETTINGS = { logo: "logo.jpg.jpg", name: "Максимум", address: "Санкт-Петербург, Рыбинская д.1, лит. 3", phone: "+7 (812) 416-96-95" };
-const AUTO_IMAGES = { "omodac5": "omodac5.webp", "omodac7": "omodac7.webp", "jaecooj6": "jaecooj6.webp", "jaecooj7": "jaecooj7.webp", "jaecooj8": "jaecooj8.webp", "belgees50": "belgees50.webp", "belgeex50+": "belgeex50.webp", "belgeex50plus": "belgeex50.webp", "belgeex70": "belgeex70.webp" };
-
-const DEALER_DOPS_BASE = [
-  { id: 'bdop1', name: 'Пакет "Оклейка капота (защитной пленкой)"', price: 43350 }, { id: 'bdop2', name: 'Пакет "Оклейка под ручками дверей"', price: 8390 },
-  { id: 'bdop3', name: 'Пакет "Оклейка полоса на капот"', price: 24450 }, { id: 'bdop4', name: 'Пакет "Оклейка полоса на крышу"', price: 18900 },
-  { id: 'bdop5', name: 'Пакет "Оклейка порогов 4 шт"', price: 12780 }, { id: 'bdop6', name: 'Пакет "Оклейка фар (защитной пленкой)"', price: 15890 },
-  { id: 'bdop7', name: 'Пакет "Защитное керамическое покрытие (1 слой)"', price: 78600 }, { id: 'bdop8', name: 'Пакет "Тонировка легкового авто (5% / 15%)"', price: 19240 },
-  { id: 'bdop9', name: 'Пакет "Шумоизоляция дверей I"', price: 30260 }, { id: 'bdop10', name: 'Ковры 3D в салон (полиуретан)', price: 3554 },
-  { id: 'bdop11', name: 'Ковер в багажник с защитой ТЭП', price: 3458 }, { id: 'bdop12', name: 'Пакет "Защита двигателя"', price: 12623 },
-  { id: 'bdop13', name: 'Пакет "Сетка защитная в бампер"', price: 9500 }, { id: 'bdop14', name: 'Подкрылок с шумоизоляцией', price: 29089 },
-  { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
-];
-
-// ==========================================
-// ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
-// ==========================================
-
-function compressImage(file, callback) {
-  const reader = new FileReader(); reader.readAsDataURL(file);
-  reader.onload = e => {
-    const img = new Image(); img.src = e.target.result;
-    img.onload = () => {
-      const canvas = document.createElement('canvas'); const MAX_WIDTH = 1200;
-      let width = img.width; let height = img.height;
-      if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
-      canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-      callback(canvas.toDataURL('image/jpeg', 0.8));
-    };
-  };
-}
-
-function exportDB() {
-  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-  let link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", "kp_backup.json");
-  document.body.appendChild(link); link.click(); link.remove(); showToast("✅ Резервная копия сохранена!");
-}
-
-function importDB(input) {
-  if (!input.files[0]) return; let reader = new FileReader();
-  reader.onload = e => {
-    try { let newDB = JSON.parse(e.target.result); if(newDB && newDB.mgrs) { db = newDB; saveDB(); location.reload(); } else { showToast("❌ Неверный формат файла!", true); } } 
-    catch(err) { showToast("❌ Ошибка чтения файла!", true); }
-  };
-  reader.readAsText(input.files[0]);
-}
-
-function copyTextForMessenger() {
-  let car = val('vCarName') || 'Автомобиль'; let pkg = val('vCarPkg') ? `(${val('vCarPkg')})` : '';
-  let price = $('outPriceNew') ? $('outPriceNew').textContent : ''; let mgr = val('vMgrName') || 'Менеджер'; let phone = val('vMgrPhone') || '';
-  let text = `Здравствуйте! Отправляю вам Коммерческое предложение.\n\n🚗 Автомобиль: ${car} ${pkg}\n💰 Специальная цена: ${price}\n\nС уважением, ${mgr} ${phone}`;
-  navigator.clipboard.writeText(text).then(() => showToast('💬 Текст скопирован! Вставьте в WhatsApp.'));
-}
-
-function toggleCalc(contentId, iconId) {
-  const content = $(contentId); const icon = $(iconId);
-  if (!content || !icon) return;
-  if (content.style.display === 'none' || content.style.display === '') { content.style.display = 'block'; icon.textContent = '▼'; } 
-  else { content.style.display = 'none'; icon.textContent = '▶'; }
-}
-
-function calculateMargin() {
-  let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
-  if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
-  
-  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
-  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
-  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
-  
-  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
-  if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
-  if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
-}
-
-function calculateOjMargin() {
-  let factPaid = getNum(val('ojFactPaid')); let basePrice = getNum(val('ojBasePrice'));
-  let discountInput = val('ojDiscount').replace(',', '.'); let discount = parseFloat(discountInput) || 0; 
-  if (!factPaid && !basePrice) { if($('outOjPremium')) $('outOjPremium').innerHTML = '0 ₽'; return; }
-  let preCalc = basePrice * (1 - (discount / 100)); let premium = Math.round(factPaid - preCalc);
-  let color = premium < 0 ? '#dc2626' : '#166534';
-  if ($('outOjPremium')) $('outOjPremium').innerHTML = `<span style="color:${color}">${premium.toLocaleString('ru-RU')} ₽</span>`;
-}
-
-function toggleTISupport() {
-  const cb = $('useTISupport'); if (!cb) return;
-  if (cb.checked) {
-    setVal('calcSupport', currentCatalogSupport);
-    if (currentCatalogSupport) formatInputNumber($('calcSupport'));
-  } else { setVal('calcSupport', ''); }
-  calculateMargin();
-}
-
-function openDopsModal() { renderDopsUI(); const m = $('dopsModal'); if(m) m.classList.add('active'); }
-function closeDopsModal() { const m = $('dopsModal'); if(m) m.classList.remove('active'); renderKP(); }
-
-function addCustomDop() {
-  const name = val('newDopName'); const price = getNum(val('newDopPrice'));
-  if (!name) return showToast('❌ Введите название опции', true);
-  const newId = 'cdop_' + Date.now(); 
-  db.customDops.push({ id: newId, name: name, price: price }); saveDB(); 
-  setVal('newDopName', ''); setVal('newDopPrice', '');
-  renderDopsUI(); setTimeout(() => { let cb = $(newId); if(cb) { cb.checked = true; renderKP(); } }, 50);
-}
-
-function removeCustomDop(id) { 
-  if (confirm('Удалить эту опцию навсегда?')) { 
-    db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); 
-  } 
-}
-
-function renderDopsUI() {
-  const list = $('modal-dops-list'); if (!list) return;
-  let tempState = {}; 
-  document.querySelectorAll('.dop-check').forEach(cb => { 
-    let prInput = $(cb.id + '_price');
-    tempState[cb.id] = { checked: cb.checked, price: prInput ? prInput.value : 0 }; 
-  });
-
-  const validCustomDops = (db.customDops || []).filter(d => d && d.id);
-  const allDops = [...validCustomDops, ...DEALER_DOPS_BASE];
-  
-  list.innerHTML = allDops.map(d => {
-    const isCustom = d.id.startsWith('cdop_');
-    return `<div class="dop-row dop-item"><label class="dop-label"><input type="checkbox" class="dop-check" id="${d.id}" data-name='${d.name}' onchange="renderKP()"><span style="${isCustom ? 'color: #1d4ed8; font-weight: bold;' : ''}">${d.name}</span></label><div style="display:flex; align-items:center;"><input type="number" class="dop-price-input dop-price" id="${d.id}_price" value="${d.price}" oninput="renderKP()">${isCustom ? `<button class="del-dop-btn" onclick="removeCustomDop('${d.id}')" title="Удалить">×</button>` : '<div style="width:36px"></div>'}</div></div>`;
-  }).join('');
-  
-  document.querySelectorAll('.dop-check').forEach(cb => { 
-    if (tempState[cb.id]) { 
-      cb.checked = tempState[cb.id].checked; 
-      let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; 
-    } 
-  });
-}
-
-function makeClean(str) { return (str || "").toLowerCase().replace(/[хХ]/g, 'x').replace(/\s+/g, '').replace(/plus/g, '+'); }
+  let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
 
 function loadCatalogFromGoogle() {
-  const loader = $('catalog-loader'); if (!loader) return;
-  let isLoaded = false;
+  const loader = $('catalog-loader');
+  Papa.parse(DIRECT_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      if(results.data && results.data.length > 0) {
+        CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG)); 
+        results.data.forEach(row => {
+          const brand = (row['Бренд']||'').trim();
+          const model = (row['Модель']||'').trim();
+          const trim = (row['Комплектация']||'').trim();
+          const pOld = (row['Базовая цена']||'').trim();
+          const pNew = (row['Цена со скидкой']||'').trim();
 
-  const timeoutId = setTimeout(() => {
-    if (!isLoaded) {
-      isLoaded = true;
-      loader.innerHTML = '⚠️ Цены не загрузились (сеть). Работает базовая версия.';
-      loader.style.color = '#d97706';
-    }
-  }, 4000);
-
-  fetch(DIRECT_URL)
-    .then(response => { if (!response.ok) throw new Error('Net Error'); return response.text(); })
-    .then(csvText => {
-      if (isLoaded) return;
-      isLoaded = true; clearTimeout(timeoutId);
-
-      // Защита от страниц-заглушек провайдера Wi-Fi
-      if (csvText.trim().startsWith('<')) {
-          loader.innerHTML = '⚠️ Сеть блокирует таблицу (HTML). Работает база.';
-          loader.style.color = '#d97706';
-          return;
-      }
-
-      if (typeof Papa === 'undefined') {
-          loader.innerHTML = '⚠️ Ошибка загрузки парсера. Работает база.';
-          loader.style.color = '#dc2626';
-          return;
-      }
-
-      Papa.parse(csvText, {
-        header: true, skipEmptyLines: true, transformHeader: function(h) { return h ? h.trim() : ""; }, 
-        complete: function(results) {
-          try {
-            results.data.forEach(row => {
-              let nr = {};
-              for (let k in row) {
-                let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
-                nr[cleanK] = row[k];
-              }
-
-              let bRaw = (nr['brand'] || nr['бренд'] || nr['марка'] || "").trim();
-              let mRaw = (nr['model'] || nr['модель'] || "").trim();
-              let tRaw = (nr['trim'] || nr['комплектация'] || "").trim();
-              
-              if (!bRaw || !mRaw || !tRaw) return;
-
-              let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
-
-              let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw;
-              if (!CATALOG[bKey]) CATALOG[bKey] = {};
-
-              let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw;
-              if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
-
-              let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw;
-              let existing = CATALOG[bKey][mKey][tKey] || {};
-
-              function extractNumber(val) {
-                if(!val) return "";
-                let d = String(val).replace(/\D/g, '');
-                return d === "0" ? "" : d;
-              }
-
-              let pOld = extractNumber(nr['priceold'] || nr['базоваяцена'] || nr['стараяцена'] || nr['цена']);
-              let pNew = extractNumber(nr['pricenew'] || nr['спеццена'] || nr['специальнаяцена'] || nr['новаяцена']);
-              let cCar = extractNumber(nr['costcar'] || nr['себестоимость'] || nr['себесавто']);
-              let supp = extractNumber(nr['support'] || nr['поддержка'] || nr['трейдин']);
-              let mcp  = extractNumber(nr['basemcp'] || nr['мцп'] || nr['базоваямцп']);
-
-              CATALOG[bKey][mKey][tKey] = {
-                priceOld: pOld || existing.priceOld || "",
-                priceNew: pNew || existing.priceNew || "",
-                costCar: cCar || existing.costCar || "",
-                support: supp || existing.support || "",
-                baseMcp: mcp || existing.baseMcp || "",
-                specs: nr['specs'] || nr['характеристики'] || existing.specs || "", 
-                stdEq: nr['stdeq'] || nr['оснащение'] || nr['базовоеоснащение'] || existing.stdEq || ""
-              };
-            });
-
-            loader.style.display = 'none';
-            
-            let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
-            populateBrandList();
-            if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
-            if (curModel) { setVal('catModel', curModel); updateTrims(); }
-            if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
-
-            showToast('✅ Базовые и Спец цены успешно обновлены!');
-          } catch (e) {
-             console.error("CSV Parse Error", e);
+          if(brand && model && trim && CATALOG[brand] && CATALOG[brand][model] && CATALOG[brand][model][trim]) {
+            CATALOG[brand][model][trim].priceOld = pOld;
+            CATALOG[brand][model][trim].priceNew = pNew;
           }
-        }
-      });
-    })
-    .catch(err => {
-      if (isLoaded) return;
-      isLoaded = true; clearTimeout(timeoutId);
-      loader.innerHTML = '❌ Цены заблокированы. Работает база.';
-      loader.style.color = '#dc2626';
-    });
+        });
+        if(loader) { loader.innerText = "✅ Каталог загружен (с ценами)"; loader.style.color = "#059669"; }
+      }
+      initCatalogUI();
+    },
+    error: function() {
+      if(loader) { loader.innerText = "⚠️ Не удалось загрузить цены. Работаем с базовым каталогом."; loader.style.color = "#d97706"; }
+      initCatalogUI();
+    }
+  });
 }
 
-function populateBrandList() {
-  const selBrand = $('catBrand'); if (!selBrand) return;
-  selBrand.innerHTML = '<option value="">-- Выберите бренд --</option>';
-  Object.keys(CATALOG).forEach(brand => selBrand.options.add(new Option(brand, brand)));
+function initCatalogUI() {
+  const brandSel = $('catBrand'); brandSel.innerHTML = '<option value="">-- Выберите бренд --</option>';
+  Object.keys(CATALOG).forEach(b => brandSel.add(new Option(b, b)));
 }
 
 function updateModels() {
-  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
-  if (!selBrand || !selModel || !selTrim) return;
-  selModel.innerHTML = '<option value="">-- Выберите модель --</option>'; selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; selTrim.disabled = true;
-  if (selBrand.value && CATALOG[selBrand.value]) { 
-      selModel.disabled = false; Object.keys(CATALOG[selBrand.value]).forEach(model => selModel.options.add(new Option(model, model))); 
-  } else { selModel.disabled = true; }
+  const b = val('catBrand'); const mSel = $('catModel'); const tSel = $('catTrim');
+  mSel.innerHTML = '<option value="">-- Выберите модель --</option>'; mSel.disabled = true;
+  tSel.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; tSel.disabled = true;
+  if(b && CATALOG[b]) {
+    Object.keys(CATALOG[b]).forEach(m => mSel.add(new Option(m, m)));
+    mSel.disabled = false;
+  }
 }
 
 function updateTrims() {
-  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
-  if (!selBrand || !selModel || !selTrim) return;
-  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
-  if (selModel.value && CATALOG[selBrand.value] && CATALOG[selBrand.value][selModel.value]) { 
-      selTrim.disabled = false; Object.keys(CATALOG[selBrand.value][selModel.value]).forEach(trim => selTrim.options.add(new Option(trim, trim))); 
-  } else { selTrim.disabled = true; }
+  const b = val('catBrand'); const m = val('catModel'); const tSel = $('catTrim');
+  tSel.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; tSel.disabled = true;
+  if(b && m && CATALOG[b][m]) {
+    Object.keys(CATALOG[b][m]).forEach(t => tSel.add(new Option(t, t)));
+    tSel.disabled = false;
+  }
 }
 
 function applyCatalog() {
-  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
-  if (!selTrim || !selTrim.value || !CATALOG[selBrand.value] || !CATALOG[selBrand.value][selModel.value]) return;
-  const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
-  if (!data) return;
+  const b = val('catBrand'); const m = val('catModel'); const t = val('catTrim');
+  if(!b || !m || !t || !CATALOG[b][m][t]) return;
+  const data = CATALOG[b][m][t];
   
-  setVal('vCarName', `${selBrand.value} ${selModel.value}`); setVal('vCarPkg', selTrim.value); setVal('vCarVIN', ''); setVal('vCarColor', '');
-  setVal('vCarSpecs', data.specs || ""); setVal('vCarStdEq', data.stdEq || ""); setVal('vCarEq', '');
+  setVal('vCarName', `${b} ${m}`);
+  setVal('vCarPkg', t);
+  setVal('vCarSpecs', data.specs || "");
+  setVal('vCarStdEq', data.stdEq || "");
+  setVal('vPriceOld', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
+  setVal('vPriceNew', data.priceNew ? formatInputNumber({value: data.priceNew, selectionStart:0}) || data.priceNew : "");
   
-  setVal('vPriceOld', data.priceOld || ""); if(data.priceOld) formatInputNumber($('vPriceOld'));
-  setVal('vPriceNew', data.priceNew || ""); if(data.priceNew) formatInputNumber($('vPriceNew'));
-  
-  setVal('calcCostCar', data.costCar || ""); if(data.costCar) formatInputNumber($('calcCostCar'));
-  setVal('ojBasePrice', data.baseMcp || ""); if(data.baseMcp) formatInputNumber($('ojBasePrice'));
-  
-  currentCatalogSupport = data.support || ""; 
-  const tiCb = $('useTISupport'); if (tiCb) tiCb.checked = false; 
-  setVal('calcSupport', ""); 
-  
-  document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-  db.imgCars = []; saveDB(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
-  showToast("✅ Автомобиль загружен из каталога");
+  showToast('✅ Автомобиль загружен из каталога');
+  renderKP(); calculateMargin(); calculateCredit('price');
 }
 
-function normalizeCarKey(name) { return (name || '').toLowerCase().replace(/\s+/g, '').replace(/plus/g, '+'); }
-function onCarNameInput() { db.imgCars = []; saveDB(); renderGallery(); renderKP(); }
-
-function switchTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  const t = $(tabId); if (t) t.classList.add('active'); 
-  if (btn) btn.classList.add('active'); 
-  renderLists();
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+  $(id).classList.add('active'); btn.classList.add('active');
 }
 
-const vLogo = $('vLogoImg');
-if (vLogo) {
-  vLogo.addEventListener('change', function() {
-    if (!this.files || !this.files.length) return; 
-    compressImage(this.files[0], compressed => { db.imgLogo = compressed; saveDB(); renderKP(); });
+function toggleCalc(contentId, iconId) {
+  const c = $(contentId); const i = $(iconId);
+  if (c.style.display === 'none') { c.style.display = 'block'; i.innerText = '▼'; } 
+  else { c.style.display = 'none'; i.innerText = '▶'; }
+}
+
+function toggleTISupport() {
+  const sp = $('calcSupport'); const fn = $('calcFin'); const chk = $('useTISupport');
+  if (chk.checked) { sp.value = '150 000'; fn.value = '100 000'; } 
+  else { sp.value = ''; fn.value = ''; }
+  calculateMargin();
+}
+
+function onCarNameInput() {
+  const cName = val('vCarName').toLowerCase();
+  const sp = $('calcSupport'); const fn = $('calcFin'); const chk = $('useTISupport');
+  if (cName.includes('c5') || cName.includes('j7') || cName.includes('j8')) { chk.checked = true; sp.value = '150 000'; fn.value = '100 000'; } 
+  else if (cName.includes('s5') || cName.includes('c7')) { chk.checked = true; sp.value = '200 000'; fn.value = '100 000'; } 
+  else if (cName.includes('j6')) { chk.checked = true; sp.value = '250 000'; fn.value = '100 000'; } 
+  else { chk.checked = false; sp.value = ''; fn.value = ''; }
+  renderKP(); calculateMargin();
+}
+
+function calculateMargin() {
+  const cName = val('vCarName').toLowerCase();
+  let price = getNum(val('vPriceNew')); let cCar = getNum(val('calcCostCar')); let cDop = getNum(val('calcCostDops'));
+  let sup = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
+
+  let mOmoda = (price - cCar - cDop) / 1.22 + sup + (fin / 1.22);
+  let mBelgee = (price - cCar - cDop) / 1.22 + (sup / 1.22) + (fin / 1.22);
+
+  if (cName.includes('belgee') || cName.includes('x50') || cName.includes('x70') || cName.includes('s50')) {
+    mOmoda = 0; $('outMarginOmoda').parentNode.style.opacity = 0.3; $('outMarginBelgee').parentNode.style.opacity = 1;
+  } else {
+    mBelgee = 0; $('outMarginBelgee').parentNode.style.opacity = 0.3; $('outMarginOmoda').parentNode.style.opacity = 1;
+  }
+
+  $('outMarginOmoda').innerText = Math.round(mOmoda).toLocaleString('ru-RU') + ' ₽';
+  $('outMarginBelgee').innerText = Math.round(mBelgee).toLocaleString('ru-RU') + ' ₽';
+  
+  let oC = $('outMarginOmoda'); oC.style.color = mOmoda > 0 ? '#059669' : '#dc2626';
+  let bC = $('outMarginBelgee'); bC.style.color = mBelgee > 0 ? '#059669' : '#dc2626';
+}
+
+function calculateOjMargin() {
+  let paid = getNum(val('ojFactPaid'));
+  let base = getNum(val('ojBasePrice'));
+  let discStr = val('ojDiscount').replace(',', '.');
+  let disc = parseFloat(discStr);
+  if (isNaN(disc)) disc = 0;
+
+  let premium = 0;
+  if (paid > 0 && base > 0) {
+    premium = paid - (base * (1 - (disc / 100)));
+  }
+
+  let out = $('outOjPremium');
+  out.innerText = Math.round(premium).toLocaleString('ru-RU') + ' ₽';
+  out.style.color = premium > 0 ? '#059669' : (premium < 0 ? '#dc2626' : '#1f2937');
+}
+
+function calculateCredit(source) {
+  let price = getNum(val('vPriceNew'));
+  let rubInput = $('creditInitialRub'); let pctInput = $('creditInitialPct');
+  let rub = rubInput ? getNum(rubInput.value) : 0; let pct = pctInput ? parseFloat(pctInput.value) || 0 : 0;
+
+  if (price > 0 && rubInput && pctInput) {
+    if (source === 'rub') { pct = (rub / price) * 100; pctInput.value = pct > 0 ? pct.toFixed(1) : ''; } 
+    else if (source === 'pct' || source === 'price') { rub = Math.round(price * (pct / 100)); rubInput.value = rub > 0 ? rub.toLocaleString('ru-RU') : ''; }
+  }
+  
+  let principal = price - rub; let term = getNum(val('creditTerm')) || 0; let rate = parseFloat(val('creditRate').replace(',','.')) || 0;
+  let payment = 0;
+  if (principal > 0 && term > 0) {
+    if (rate > 0) { let r = (rate / 100) / 12; payment = principal * (r * Math.pow(1 + r, term)) / (Math.pow(1 + r, term) - 1); } 
+    else { payment = principal / term; }
+  }
+
+  let pRounded = Math.round(payment);
+  if ($('outCreditPayment')) $('outCreditPayment').innerHTML = pRounded > 0 ? pRounded.toLocaleString('ru-RU') + ' ₽/мес' : '0 ₽';
+  if ($('outCreditFinalPay')) $('outCreditFinalPay').textContent = pRounded.toLocaleString('ru-RU');
+  if ($('outCreditDownpay')) $('outCreditDownpay').textContent = rub.toLocaleString('ru-RU');
+  if ($('outCreditTerm')) $('outCreditTerm').textContent = term;
+
+  renderKP();
+}
+
+let dopState = {};
+const DOPS_PRESETS = [
+  { name: "Ковры в салон (резина)", price: 3500 }, { name: "Ковер в багажник", price: 2500 },
+  { name: "Ковры в салон (ворс)", price: 4500 }, { name: "Защита картера", price: 6500 },
+  { name: "Сетка в бампер", price: 4000 }, { name: "Амортизаторы капота", price: 5500 },
+  { name: "Тонировка задней полусферы", price: 7000 }, { name: "Сигнализация (StarLine/Pandora)", price: 25000 },
+  { name: "Антикоррозийная обработка", price: 18000 }, { name: "Шумоизоляция арок", price: 15000 },
+  { name: "Бронепленка (капот, фары, бампер)", price: 45000 }, { name: "Керамическое покрытие", price: 20000 },
+  { name: "Видеорегистратор", price: 8500 }, { name: "Зимняя резина (комплект)", price: 40000 },
+  { name: "Дорожный набор", price: 2500 }, { name: "Оклейка зон риска пленкой", price: 15000 },
+  { name: "Дефлекторы окон", price: 3500 }, { name: "Пороги (подножки)", price: 35000 }
+];
+
+function openDopsModal() { $('dopsModal').classList.add('active'); renderDopsModal(); }
+function closeDopsModal() { $('dopsModal').classList.remove('active'); updateDopsSummary(); renderKP(); }
+
+function renderDopsModal() {
+  const c = $('modal-dops-list'); c.innerHTML = '';
+  const allDops = [...DOPS_PRESETS, ...db.customDops];
+  
+  allDops.forEach((d, i) => {
+    let row = document.createElement('div'); row.className = 'dop-row';
+    let id = `dop_${i}`;
+    let isChecked = dopState[d.name] !== undefined;
+    let currPrice = isChecked ? dopState[d.name] : d.price;
+
+    let isCustom = i >= DOPS_PRESETS.length;
+    let delBtn = isCustom ? `<button class="del-dop-btn" onclick="deleteCustomDopForever('${d.name}', event)">×</button>` : '';
+
+    row.innerHTML = `
+      <label class="dop-label" for="${id}">
+        <input type="checkbox" id="${id}" onchange="toggleDop('${d.name}', this.checked, '${id}_price')" ${isChecked ? 'checked' : ''}>
+        <span>${d.name}</span>
+      </label>
+      <div style="display:flex; align-items:center;">
+        <input type="number" id="${id}_price" class="dop-price-input" value="${currPrice}" oninput="updateDopPrice('${d.name}', this.value)" ${!isChecked ? 'disabled' : ''}>
+        ${delBtn}
+      </div>
+    `;
+    c.appendChild(row);
   });
 }
 
-const vImg = $('vCarImg');
-if (vImg) {
-  vImg.addEventListener('change', async function () {
-    if (!this.files || !this.files.length) return; 
-    const files = Array.from(this.files).slice(0, 3); let newPhotos = [];
-    for(let file of files) { await new Promise(res => { compressImage(file, compressed => { newPhotos.push(compressed); res(); }); }); }
-    db.imgCars = [...(db.imgCars || []), ...newPhotos].slice(0, 3); saveDB(); renderGallery(); renderKP(); this.value = '';
-  });
+function toggleDop(name, checked, priceId) {
+  const pInput = $(priceId);
+  if(checked) { pInput.disabled = false; dopState[name] = getNum(pInput.value); } 
+  else { pInput.disabled = true; delete dopState[name]; }
 }
 
-function renderGallery() {
-  const gal = $('mini-gallery'); if(!gal) return;
-  if(!db.imgCars || db.imgCars.length === 0) { gal.innerHTML = ''; return; }
-  gal.innerHTML = db.imgCars.map((img, i) => `
-    <div style="position:relative; width:65px; height:65px; border-radius:6px; overflow:hidden; border:1px solid #d1d5db; flex-shrink:0;">
-      <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
-      <button onclick="removePhoto(${i})" style="position:absolute; top:0; right:0; background:rgba(220,38,38,0.9); color:#fff; border:none; width:22px; height:22px; font-size:14px; cursor:pointer; margin:0; padding:0; border-radius:0 0 0 4px;">×</button>
-    </div>
-  `).join('');
-}
+function updateDopPrice(name, val) { if(dopState[name] !== undefined) dopState[name] = getNum(val); }
 
-function removePhoto(idx) { if (!db.imgCars) return; db.imgCars.splice(idx, 1); saveDB(); renderGallery(); renderKP(); }
-
-function renderKP() {
-  const dc = $('document-container');
-  if (dc) dc.className = `theme-${val('vTheme') || 'premium'}`;
+function addCustomDop() {
+  let name = val('newDopName'); let price = getNum(val('newDopPrice'));
+  if(!name) { showToast('Введите название опции', true); return; }
   
-  if ($('outDName')) $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
-  if ($('outDAddr')) $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
-  if ($('outDContacts')) $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
+  let exists = DOPS_PRESETS.some(d => d.name.toLowerCase() === name.toLowerCase()) || 
+               db.customDops.some(d => d.name.toLowerCase() === name.toLowerCase());
+  if(exists) { showToast('Такая опция уже есть в списке', true); return; }
 
-  let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
-  if ($('outLogo')) $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
+  db.customDops.push({ name, price }); saveDB();
+  $('newDopName').value = ''; $('newDopPrice').value = '';
+  dopState[name] = price; 
+  renderDopsModal(); showToast('Своя опция добавлена');
+}
 
-  if ($('outNum')) $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
-  if ($('outToday')) $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
-  if ($('outValid')) $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
+function deleteCustomDopForever(name, e) {
+  e.stopPropagation(); e.preventDefault();
+  db.customDops = db.customDops.filter(d => d.name !== name);
+  delete dopState[name]; saveDB(); renderDopsModal();
+}
 
-  if ($('outCarName')) $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
-  if ($('outCarPkg')) $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
+function updateDopsSummary() {
+  const sum = $('dops-summary'); const keys = Object.keys(dopState);
+  if(keys.length === 0) { sum.style.display = 'none'; sum.innerText = ''; return; }
+  let total = keys.reduce((acc, k) => acc + dopState[k], 0);
+  sum.style.display = 'block'; sum.innerText = `✅ Выбрано допов: ${keys.length} шт. на сумму ${total.toLocaleString('ru-RU')} ₽`;
+}
 
-  let specsArr = [];
-  if (val('vCarVIN')) specsArr.push(`VIN-номер: ${val('vCarVIN')}`);
-  if (val('vCarColor')) specsArr.push(`Цвет кузова: ${val('vCarColor')}`);
-  if (val('vCarSpecs')) specsArr.push(val('vCarSpecs'));
-  if ($('outCarSpecs')) $('outCarSpecs').textContent = specsArr.join('\n') || 'Характеристики не указаны';
-
-  let eqList = val('vCarEq').split('\n').filter(Boolean);
-  if ($('outCarEq')) $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
-
-  let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
-  if ($('stdEqBlock') && $('outCarStdEq')) {
-      if (stdEqList.length > 0) { $('stdEqBlock').style.display = 'block'; $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join(''); } 
-      else { $('stdEqBlock').style.display = 'none'; }
+$('vLogoImg').addEventListener('change', function(e) {
+  const f = e.target.files[0];
+  if(f) {
+    const r = new FileReader();
+    r.onload = ev => { db.imgLogo = ev.target.result; saveDB(); renderKP(); showToast('Логотип загружен'); };
+    r.readAsDataURL(f);
   }
+});
 
-  let dopSum = 0; let selectedCount = 0; let dopItems = [];
-  document.querySelectorAll('.dop-check').forEach(cb => {
-    if (cb.checked) { 
-        let prInput = $(cb.id + '_price'); 
-        let p = prInput ? (parseInt(prInput.value) || 0) : 0; 
-        dopSum += p; selectedCount++; 
-        dopItems.push(`<b>${cb.dataset.name}</b> — ${p.toLocaleString('ru-RU')} ₽`); 
-    }
+$('vCarImg').addEventListener('change', function(e) {
+  const files = Array.from(e.target.files).slice(0, 3);
+  if(files.length === 0) return;
+  db.imgCars = [];
+  
+  let loaded = 0;
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = ev => {
+      db.imgCars.push(ev.target.result);
+      loaded++;
+      if(loaded === files.length) { renderMiniGallery(); renderKP(); saveDB(); }
+    };
+    r.readAsDataURL(f);
   });
+});
 
-  const sumLabel = $('dops-summary');
-  if (sumLabel) {
-      if (selectedCount > 0) { sumLabel.style.display = 'block'; sumLabel.textContent = `Выбрано опций: ${selectedCount} (на ${dopSum.toLocaleString('ru-RU')} ₽)`; } 
-      else { sumLabel.style.display = 'none'; }
-  }
-
-  if ($('dealerEqBlock') && $('outDealerEq')) {
-      if (dopItems.length > 0) { $('dealerEqBlock').style.display = 'block'; $('outDealerEq').innerHTML = dopItems.map(i => `<li>${i}</li>`).join(''); } 
-      else { $('dealerEqBlock').style.display = 'none'; }
-  }
-
-  let baseOldNum = getNum(val('vPriceOld')); let baseNewNum = getNum(val('vPriceNew'));
-  let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum; let finalNew = baseNewNum; 
-
-  if ($('outPriceOld')) $('outPriceOld').textContent = baseOldNum > 0 ? formatRub(finalOld) : "—";
-  if ($('outPriceNew')) $('outPriceNew').textContent = baseNewNum > 0 ? formatRub(finalNew) : "—";
-
-  let diff = finalOld - finalNew;
-  if ($('outDiscount')) {
-      if (diff > 0 && baseOldNum > 0 && baseNewNum > 0) { $('outDiscount').textContent = `Выгода ${diff.toLocaleString('ru-RU')} ₽`; $('outDiscount').style.display = 'block'; } 
-      else { $('outDiscount').style.display = 'none'; }
-  }
-
-  if ($('outMgrName')) $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера'; 
-  if ($('outMgrPhone')) $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон'; 
-  if ($('outMgrEmail')) $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
-
-  const carKey = normalizeCarKey(val('vCarName')); const photoBox = $('outCarImg'); let imagesToRender = [];
-  if (db.imgCars && db.imgCars.length > 0) { imagesToRender = db.imgCars; } else if (carKey && AUTO_IMAGES[carKey]) { imagesToRender = [AUTO_IMAGES[carKey]]; }
-  if (val('vTheme') !== 'catalog' && imagesToRender.length > 0) { imagesToRender = [imagesToRender[0]]; }
-  if (photoBox) {
-      if (imagesToRender.length > 0) { photoBox.setAttribute('data-count', imagesToRender.length); photoBox.innerHTML = imagesToRender.map(img => `<img src="${img}">`).join(''); } 
-      else { photoBox.setAttribute('data-count', 0); photoBox.innerHTML = '<span>Фото авто</span>'; }
-  }
+function renderMiniGallery() {
+  const gal = $('mini-gallery'); gal.innerHTML = '';
+  db.imgCars.forEach((src, i) => {
+    let img = document.createElement('img');
+    img.src = src; img.style.width = '60px'; img.style.height = '40px'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px'; img.style.border = '1px solid #d1d5db';
+    gal.appendChild(img);
+  });
 }
 
 function autoNumDate() {
-  setVal('vNum', `${new Date().getFullYear()}-${String(db.counter++).padStart(3, '0')}`);
-  let d = new Date(); d.setDate(d.getDate() + 7); setVal('vDate', `до ${d.toLocaleDateString('ru-RU')}`); saveDB(); renderKP();
+  const dateStr = new Date(Date.now() + 7*86400000).toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', year:'numeric'});
+  setVal('vDate', 'до ' + dateStr);
+  setVal('vNum', db.counter);
+  db.counter++; saveDB(); renderKP();
 }
 
-function confirmClear() {
-  if(confirm("Очистить все данные в анкете?")) {
-    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
-    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-    db.imgCars = []; const cb = $('useTISupport'); if(cb) cb.checked = false; currentCatalogSupport = "";
-    saveDB(); renderGallery(); renderKP(); const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
-    calculateMargin(); calculateOjMargin(); showToast("Анкета очищена!");
+function formatPhone(el) {
+  let r = el.value.replace(/\D/g, '');
+  if(r.length > 11) r = r.substring(0, 11);
+  let res = '';
+  if(r.length > 0) res = r[0] === '7' || r[0] === '8' ? '+7 ' : '+7 ' + r[0];
+  if(r.length > 1) res += '(' + r.substring(1, 4);
+  if(r.length > 4) res += ') ' + r.substring(4, 7);
+  if(r.length > 7) res += '-' + r.substring(7, 9);
+  if(r.length > 9) res += '-' + r.substring(9, 11);
+  el.value = res;
+}
+
+function renderKP() {
+  $('outDName').innerText = val('vDName') || 'Название дилера';
+  $('outDAddr').innerText = val('vDAddr') || 'Адрес дилера';
+  $('outDContacts').innerText = val('vDPhone') || 'Телефон дилера';
+  
+  if(db.imgLogo) $('outLogo').innerHTML = `<img src="${db.imgLogo}">`;
+  else $('outLogo').innerHTML = `<span>Логотип</span>`;
+  
+  const num = val('vNum'); $('outNum').innerText = num ? '№ ' + num : '№ —';
+  const dp = new Date().toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', year:'numeric'});
+  $('outToday').innerText = 'от ' + dp;
+  
+  const vTheme = val('vTheme') || 'premium';
+  $('document-container').className = `theme-${vTheme}`;
+  
+  $('outCarName').innerText = val('vCarName') || 'Марка и Модель';
+  const pkg = val('vCarPkg'); $('outCarPkg').innerText = pkg || 'Комплектация';
+  $('outCarPkg').style.display = pkg ? 'inline-block' : 'none';
+  
+  const vin = val('vCarVIN'); const col = val('vCarColor'); const specs = val('vCarSpecs');
+  let spText = [];
+  if(col) spText.push(`Цвет кузова: ${col}`);
+  if(vin) spText.push(`VIN: ${vin}`);
+  if(specs) spText.push(specs);
+  $('outCarSpecs').innerText = spText.length ? spText.join('\n') : 'Параметры не указаны';
+
+  let eqText = val('vCarEq');
+  if(eqText) { $('outCarEq').innerHTML = eqText.split('\n').map(l => l.trim()).filter(l => l).map(l => `<li>${l}</li>`).join(''); } 
+  else { $('outCarEq').innerHTML = '<li>Нет данных</li>'; }
+
+  let stdEqText = val('vCarStdEq');
+  if(stdEqText) {
+    $('outCarStdEq').innerHTML = stdEqText.split('\n').map(l => l.trim()).filter(l => l).map(l => `<li>${l}</li>`).join('');
+    $('stdEqBlock').style.display = 'block';
+  } else {
+    $('stdEqBlock').style.display = 'none';
   }
+
+  const keys = Object.keys(dopState);
+  if(keys.length > 0) {
+    $('outDealerEq').innerHTML = keys.map(k => `<li>${k} — <b>${dopState[k].toLocaleString('ru-RU')} ₽</b></li>`).join('');
+    $('dealerEqBlock').style.display = 'block';
+  } else {
+    $('dealerEqBlock').style.display = 'none';
+  }
+
+  const pOld = getNum(val('vPriceOld')); const pNew = getNum(val('vPriceNew'));
+  $('outPriceOld').innerText = pOld > 0 ? formatRub(pOld) : '—';
+  $('outPriceNew').innerText = pNew > 0 ? formatRub(pNew) : '—';
+  
+  if(pOld > pNew && pNew > 0) {
+    $('outDiscount').style.display = 'inline-block';
+    $('outDiscount').innerText = 'Выгода ' + formatRub(pOld - pNew);
+  } else { $('outDiscount').style.display = 'none'; }
+
+  let cb = $('showCreditInKP'); let cbBadge = $('outCreditBadge');
+  if(cb && cb.checked && getNum($('outCreditPayment').innerText) > 0) { cbBadge.style.display = 'flex'; } 
+  else { cbBadge.style.display = 'none'; }
+
+  const photoBox = $('outCarImg');
+  if(db.imgCars && db.imgCars.length > 0) {
+    photoBox.setAttribute('data-count', db.imgCars.length);
+    photoBox.innerHTML = db.imgCars.map(src => `<img src="${src}">`).join('');
+    photoBox.style.background = 'transparent';
+  } else {
+    photoBox.setAttribute('data-count', 0);
+    photoBox.innerHTML = `<span>Фото авто</span>`;
+    photoBox.style.background = '#f3f4f6';
+  }
+
+  $('outMgrName').innerText = val('vMgrName') || 'Имя менеджера';
+  $('outMgrPhone').innerText = val('vMgrPhone') || 'Телефон';
+  $('outMgrEmail').innerText = val('vMgrEmail') || 'Email';
+  const vd = val('vDate'); $('outValid').innerText = vd ? 'Срок действия: ' + vd : 'Срок действия: —';
+}
+
+function renderLists() {
+  const mDiv = $('list-mgrs'); mDiv.innerHTML = '';
+  db.mgrs.forEach((m, i) => {
+    mDiv.innerHTML += `<div class="card"><b>${m.n}</b><p>${m.p}<br>${m.e}</p><div class="acts"><button onclick="loadItem('mgrs',${i})">Выбрать</button><button class="btn-red" onclick="deleteItem('mgrs',${i})">Удалить</button></div></div>`;
+  });
+  const tDiv = $('list-tpls'); tDiv.innerHTML = '';
+  db.tpls.forEach((t, i) => {
+    tDiv.innerHTML += `<div class="card"><b>${t.n}</b><p>${t.car}</p><div class="acts"><button onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="deleteItem('tpls',${i})">Удалить</button></div></div>`;
+  });
 }
 
 function saveItem(type) {
-  if (type === 'mgrs') {
-    if (!val('mName')) return showToast("❌ Введите имя менеджера", true);
-    db.mgrs.push({ n: val('mName'), p: val('mPhone'), e: val('mEmail') }); ['mName','mPhone','mEmail'].forEach(id => setVal(id, ''));
-  } else if (type === 'tpls') {
-    if (!val('tName')) return showToast("❌ Назовите шаблон", true); let savedDops = [];
-    document.querySelectorAll('.dop-check').forEach(cb => { 
-        if (cb.checked) {
-            let pr = $(cb.id + '_price');
-            savedDops.push({ id: cb.id, price: pr ? pr.value : 0, name: cb.dataset.name }); 
-        }
-    });
-    db.tpls.push({
-      title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'), cn: val('vCarName'), cp: val('vCarPkg'), cvin: val('vCarVIN'), ccol: val('vCarColor'), cs: val('vCarSpecs'),
-      ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'), mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail'), dops: savedDops
-    });
-    setVal('tName', '');
+  if(type === 'mgrs') {
+    const n = val('mName'), p = val('mPhone'), e = val('mEmail');
+    if(!n) return showToast('Введите имя', true);
+    db.mgrs.push({n, p, e});
+    setVal('mName',''); setVal('mPhone',''); setVal('mEmail','');
+    showToast('Менеджер сохранен');
+  } else {
+    const n = val('tName'); if(!n) return showToast('Введите название', true);
+    const tpl = {
+      n, theme: val('vTheme'), num: val('vNum'), date: val('vDate'),
+      car: val('vCarName'), pkg: val('vCarPkg'), vin: val('vCarVIN'), col: val('vCarColor'),
+      specs: val('vCarSpecs'), eq: val('vCarEq'), stdEq: val('vCarStdEq'),
+      pOld: val('vPriceOld'), pNew: val('vPriceNew'), imgCars: db.imgCars || [],
+      mN: val('vMgrName'), mP: val('vMgrPhone'), mE: val('vMgrEmail'),
+      dN: val('vDName'), dA: val('vDAddr'), dP: val('vDPhone'),
+      calcCar: val('calcCostCar'), calcDop: val('calcCostDops'),
+      calcSup: val('calcSupport'), calcFin: val('calcFin'),
+      ojPaid: val('ojFactPaid'), ojBase: val('ojBasePrice'), ojDisc: val('ojDiscount'),
+      dopState: JSON.parse(JSON.stringify(dopState)),
+      crTerm: val('creditTerm'), crRate: val('creditRate'), crRub: val('creditInitialRub'), 
+      crPct: val('creditInitialPct'), crShow: $('showCreditInKP').checked
+    };
+    db.tpls.push(tpl); setVal('tName',''); showToast('Шаблон сохранен');
   }
-  saveDB(); renderLists(); showToast("✅ Сохранено!");
+  saveDB(); renderLists();
 }
 
-function loadItem(type, idx) {
-  let i = db[type][idx]; if (!i) return;
-  if (type === 'mgrs') { setVal('vMgrName', i.n); setVal('vMgrPhone', i.p); setVal('vMgrEmail', i.e); } 
-  else if (type === 'tpls') {
-    setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp); setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarVIN', i.cvin); setVal('vCarColor', i.ccol);
-    setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn); setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
-    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-    if (i.dops && Array.isArray(i.dops)) {
-      let needsReRender = false;
-      i.dops.forEach(d => { if (!document.getElementById(d.id) && d.id.startsWith('cdop_')) { db.customDops.push({ id: d.id, name: d.name || 'Опция', price: d.price }); needsReRender = true; } });
-      if(needsReRender) { saveDB(); renderDopsUI(); }
-      i.dops.forEach(d => { let cb = document.getElementById(d.id); let pr = document.getElementById(d.id + '_price'); if (cb) cb.checked = true; if (pr) pr.value = d.price; });
-    }
-    ['vPriceOld', 'vPriceNew'].forEach(id => { let el = $(id); if(el && el.value) formatInputNumber(el); });
+function loadItem(type, i) {
+  if(type === 'mgrs') {
+    const m = db.mgrs[i]; setVal('vMgrName', m.n); setVal('vMgrPhone', m.p); setVal('vMgrEmail', m.e);
+    showToast('Менеджер подставлен');
+  } else {
+    const t = db.tpls[i];
+    setVal('vTheme', t.theme); setVal('vNum', t.num); setVal('vDate', t.date);
+    setVal('vCarName', t.car); setVal('vCarPkg', t.pkg); setVal('vCarVIN', t.vin); setVal('vCarColor', t.col);
+    setVal('vCarSpecs', t.specs); setVal('vCarEq', t.eq); setVal('vCarStdEq', t.stdEq);
+    setVal('vPriceOld', t.pOld); setVal('vPriceNew', t.pNew);
+    setVal('vMgrName', t.mN); setVal('vMgrPhone', t.mP); setVal('vMgrEmail', t.mE);
+    setVal('vDName', t.dN); setVal('vDAddr', t.dA); setVal('vDPhone', t.dP);
+    setVal('calcCostCar', t.calcCar); setVal('calcCostDops', t.calcDop);
+    setVal('calcSupport', t.calcSup); setVal('calcFin', t.calcFin);
+    setVal('ojFactPaid', t.ojPaid); setVal('ojBase', t.ojBase); setVal('ojDiscount', t.ojDisc);
+    
+    setVal('creditTerm', t.crTerm); setVal('creditRate', t.crRate); 
+    setVal('creditInitialRub', t.crRub); setVal('creditInitialPct', t.crPct);
+    $('showCreditInKP').checked = t.crShow === true;
+    
+    db.imgCars = t.imgCars || []; renderMiniGallery();
+    dopState = t.dopState ? JSON.parse(JSON.stringify(t.dopState)) : {};
+    updateDopsSummary(); calculateMargin(); calculateOjMargin(); calculateCredit('price'); showToast('Шаблон загружен');
   }
-  switchTab('tab-data', document.querySelector('.tab')); renderKP(); showToast("✅ Данные загружены!");
+  renderKP(); switchTab('tab-data', document.querySelector('.tab'));
 }
 
-function delItem(type, idx) { if (confirm('Удалить навсегда?')) { db[type].splice(idx, 1); saveDB(); renderLists(); } }
+function deleteItem(type, i) { db[type].splice(i,1); saveDB(); renderLists(); }
 
-function renderLists() {
-  const lm = $('list-mgrs'); if (lm && db.mgrs) lm.innerHTML = db.mgrs.map((m, i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
-  const lt = $('list-tpls'); if (lt && db.tpls) lt.innerHTML = db.tpls.map((t, i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
+function confirmClear() { if(confirm("Очистить все поля и фото?")) clearAll(); }
+function clearAll() {
+  document.querySelectorAll('input:not([type="checkbox"]), textarea').forEach(e => e.value = '');
+  $('showCreditInKP').checked = false; $('useTISupport').checked = false;
+  $('vTheme').value = 'premium';
+  db.imgCars = []; renderMiniGallery(); dopState = {}; updateDopsSummary();
+  $('outMarginOmoda').innerText = '0 ₽'; $('outMarginBelgee').innerText = '0 ₽'; 
+  $('outOjPremium').innerText = '0 ₽'; $('outCreditPayment').innerText = '0 ₽';
+  renderKP(); showToast('Форма очищена');
 }
 
-function downloadPDF() {
-  const btn = $('btn-pdf'); if (!btn) return;
-  const originalText = btn.textContent; btn.textContent = '⏳ Делаем PDF...'; btn.disabled = true;
-  const element = $('document-container'); const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
-  element.style.width = '210mm'; element.style.height = 'auto'; 
+function copyTextForMessenger() {
+  let text = `🚗 *${val('vCarName')}* ${val('vCarPkg') ? '('+val('vCarPkg')+')' : ''}\n`;
+  if(val('vPriceNew')) text += `🔥 Финальная цена: *${val('vPriceNew')} ₽*\n`;
+  if(val('vPriceOld')) text += `💰 Базовая цена: ~${val('vPriceOld')} ₽~\n`;
+  
+  if(val('vCarEq')) text += `\n🎁 *В подарок от дилера:*\n${val('vCarEq').split('\n').map(l=>'- '+l.trim()).join('\n')}\n`;
+  
+  const keys = Object.keys(dopState);
+  if(keys.length > 0) text += `\n⚙️ *Доп. оборудование:*\n${keys.map(k=>'- '+k).join('\n')}\n`;
+  
+  if($('showCreditInKP').checked && getNum($('outCreditPayment').innerText) > 0) {
+    text += `\n💳 *Автокредит:*\nВзнос: ${val('creditInitialRub')} ₽\nСрок: ${val('creditTerm')} мес.\nПлатеж: от *${$('outCreditFinalPay').innerText} ₽/мес*\n`;
+  }
 
-  setTimeout(() => {
-    html2canvas(element, { scale: 3, useCORS: true }).then(canvas => {
-      const imgData = canvas.toDataURL('image/jpeg', 0.95); const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = 210; const pdfHeight = 297; let finalWidth = pdfWidth; let finalHeight = (canvas.height * pdfWidth) / canvas.width;
-      if (finalHeight > pdfHeight) { finalHeight = pdfHeight; finalWidth = (canvas.width * pdfHeight) / canvas.height; }
-      let xOffset = (pdfWidth - finalWidth) / 2; pdf.addImage(imgData, 'JPEG', xOffset, 0, finalWidth, finalHeight);
-      let fileName = 'КП_Автосалон.pdf'; if (val('vCarName')) fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.pdf`;
-      pdf.save(fileName); if (wasMobile) document.body.classList.add('mobile-view'); element.style.width = '';
-      btn.textContent = originalText; btn.disabled = false; showToast("✅ PDF успешно скачан!");
-    }).catch(e => {
-      btn.textContent = originalText; btn.disabled = false; showToast("❌ Ошибка PDF", true);
-    });
-  }, 300);
+  text += `\n👤 Ваш менеджер: ${val('vMgrName')}\n📞 ${val('vMgrPhone')}`;
+  navigator.clipboard.writeText(text).then(() => showToast('Текст скопирован!'));
 }
 
-function downloadImage() {
-  const btn = $('btn-img'); if (!btn) return;
-  const originalText = btn.textContent; btn.textContent = '⏳ Делаем фото...'; btn.disabled = true;
-  const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
-  const element = $('document-container'); element.style.width = '800px';
-
-  setTimeout(() => {
-    html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
-      if (wasMobile) document.body.classList.add('mobile-view'); element.style.width = '';
-      let fileName = 'КП_Автосалон.jpg'; if (val('vCarName')) fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.jpg`;
-      const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 0.9); link.click();
-      btn.textContent = originalText; btn.disabled = false; showToast("✅ Фото успешно скачано!");
-    }).catch(e => {
-      btn.textContent = originalText; btn.disabled = false; showToast("❌ Ошибка фото", true);
-    });
-  }, 200);
+async function downloadPDF() {
+  const btn = $('btn-pdf'); btn.innerText = "⏳ Генерация..."; btn.disabled = true;
+  const doc = $('document-container');
+  doc.style.transform = "scale(1)"; doc.style.margin = "0"; doc.style.boxShadow = "none";
+  
+  try {
+    const canvas = await html2canvas(doc, { scale: 3, useCORS: true, backgroundColor: "#ffffff" });
+    const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+    const pdfW = pdf.internal.pageSize.getWidth(); const pdfH = (canvas.height * pdfW) / canvas.width;
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfW, pdfH);
+    pdf.save(`KP_${val('vCarName').replace(/\s/g,'_') || 'Auto'}.pdf`);
+    showToast('PDF успешно скачан');
+  } catch (e) {
+    showToast('Ошибка создания PDF', true); console.error(e);
+  } finally {
+    doc.style = ""; btn.innerText = "📄 Идеальный PDF"; btn.disabled = false;
+  }
 }
 
-// ==========================================
-// ЗАПУСК: 100% ГАРАНТИЯ ЗАГРУЗКИ БЕЗ ЗАВИСАНИЙ
-// ==========================================
-try {
-  populateBrandList(); 
-  renderDopsUI(); 
-  renderLists(); 
-  renderGallery(); 
-  renderKP(); 
-  calculateMargin(); 
-  calculateOjMargin();
-} catch (error) {
-  // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ
-  console.error(error);
-  localStorage.removeItem('kp_db_v24');
-  alert("Браузер повредил старые файлы. Мы восстановили работу.");
-  location.reload();
+async function downloadImage() {
+  const btn = $('btn-img'); btn.innerText = "⏳ Секунду..."; btn.disabled = true;
+  const doc = $('document-container');
+  doc.style.transform = "scale(1)"; doc.style.margin = "0"; doc.style.boxShadow = "none";
+  try {
+    const canvas = await html2canvas(doc, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const link = document.createElement('a'); link.download = `KP_${val('vCarName').replace(/\s/g,'_') || 'Auto'}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.9); link.click();
+    showToast('Картинка сохранена');
+  } catch (e) {
+    showToast('Ошибка сохранения', true);
+  } finally {
+    doc.style = ""; btn.innerText = "🖼️ Картинкой"; btn.disabled = false;
+  }
 }
 
-// Запускаем фоновую загрузку цен
-loadCatalogFromGoogle();
+function exportDB() {
+  const data = JSON.stringify(db);
+  const blob = new Blob([data], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `backup_kp_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url); showToast('База скачана');
+}
+
+function importDB(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if(parsed && typeof parsed === 'object') {
+        db = parsed; saveDB(); renderLists(); renderMiniGallery(); showToast('База загружена!');
+      }
+    } catch(err) { showToast('Ошибка файла', true); }
+  };
+  reader.readAsText(file); input.value = '';
+}
+
+function checkTelegram() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  if(ua.indexOf("Telegram") > -1) $('tgWarning').style.display = "block";
+  if(window.innerWidth <= 768) document.body.classList.add('mobile-view');
+}
+
+window.onload = () => {
+  renderLists(); renderMiniGallery(); renderKP(); checkTelegram(); loadCatalogFromGoogle();
+  
+  // Привязка автокалькуляции кредита при ручном вводе цены
+  let pf = $('vPriceNew');
+  if(pf) { pf.addEventListener('input', () => { calculateMargin(); calculateCredit('price'); renderKP(); }); }
+};
 </script>
 </body>
 </html>

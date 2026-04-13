@@ -605,23 +605,7 @@ const BASE_CATALOG = {
     "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
   }
 };
-let db = JSON.parse(localStorage.getItem('dealer_kp_db')) || { mgrs: [], tpls: [], imgLogo: '', imgCars: [], customDops: [], counter: 1 };
-let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
-
-// Защита от переполнения памяти браузера фотографиями
-function saveDB() {
-  try {
-    localStorage.setItem('dealer_kp_db', JSON.stringify(db));
-  } catch (e) {
-    if (e.name === 'QuotaExceededError') {
-      showToast('⚠️ Память переполнена! Фото слишком тяжелые. Фотографии сброшены.', true);
-      db.imgCars = []; 
-      localStorage.setItem('dealer_kp_db', JSON.stringify(db));
-      renderMiniGallery();
-      renderKP();
-    }
-  }
-}
+  let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
 
 function loadCatalogFromGoogle() {
   const loader = $('catalog-loader');
@@ -633,33 +617,23 @@ function loadCatalogFromGoogle() {
       if(results.data && results.data.length > 0) {
         CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG)); 
         results.data.forEach(row => {
-          let cleanRow = {};
-          for(let key in row) {
-            cleanRow[key.trim()] = row[key];
-          }
-
-          const brand = (cleanRow['Бренд']||'').trim();
-          const model = (cleanRow['Модель']||'').trim();
-          const trim = (cleanRow['Комплектация']||'').trim();
-          
-          const costCar = (cleanRow['Себестоимость'] || '').trim();
-          const supportTI = (cleanRow['Поддержка ТИ'] || '').trim();
-          const pOld = (cleanRow['Базовая цена']||'').trim();
+          const brand = (row['Бренд']||'').trim();
+          const model = (row['Модель']||'').trim();
+          const trim = (row['Комплектация']||'').trim();
+          const pOld = (row['Базовая цена']||'').trim();
+          const pNew = (row['Цена со скидкой']||'').trim();
 
           if(brand && model && trim && CATALOG[brand] && CATALOG[brand][model] && CATALOG[brand][model][trim]) {
             CATALOG[brand][model][trim].priceOld = pOld;
-            CATALOG[brand][model][trim].costCar = costCar;
-            CATALOG[brand][model][trim].supportTI = supportTI;
-          } else {
-            if(brand) console.warn(`Не найдено в базе: ${brand} | ${model} | ${trim}`);
+            CATALOG[brand][model][trim].priceNew = pNew;
           }
         });
-        if(loader) { loader.innerText = "✅ Каталог загружен. Выберите авто!"; loader.style.color = "#059669"; }
+        if(loader) { loader.innerText = "✅ Каталог загружен (с ценами)"; loader.style.color = "#059669"; }
       }
       initCatalogUI();
     },
     error: function() {
-      if(loader) { loader.innerText = "⚠️ Не удалось загрузить таблицу."; loader.style.color = "#d97706"; }
+      if(loader) { loader.innerText = "⚠️ Не удалось загрузить цены. Работаем с базовым каталогом."; loader.style.color = "#d97706"; }
       initCatalogUI();
     }
   });
@@ -698,12 +672,8 @@ function applyCatalog() {
   setVal('vCarPkg', t);
   setVal('vCarSpecs', data.specs || "");
   setVal('vCarStdEq', data.stdEq || "");
-  
   setVal('vPriceOld', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
-  setVal('vPriceNew', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
-  
-  setVal('calcCostCar', data.costCar ? formatInputNumber({value: data.costCar, selectionStart:0}) || data.costCar : "");
-  setVal('calcSupport', data.supportTI ? formatInputNumber({value: data.supportTI, selectionStart:0}) || data.supportTI : "");
+  setVal('vPriceNew', data.priceNew ? formatInputNumber({value: data.priceNew, selectionStart:0}) || data.priceNew : "");
   
   showToast('✅ Автомобиль загружен из каталога');
   renderKP(); calculateMargin(); calculateCredit('price');
@@ -721,8 +691,22 @@ function toggleCalc(contentId, iconId) {
   else { c.style.display = 'none'; i.innerText = '▶'; }
 }
 
-function toggleTISupport() { calculateMargin(); }
-function onCarNameInput() { renderKP(); calculateMargin(); }
+function toggleTISupport() {
+  const sp = $('calcSupport'); const fn = $('calcFin'); const chk = $('useTISupport');
+  if (chk.checked) { sp.value = '150 000'; fn.value = '100 000'; } 
+  else { sp.value = ''; fn.value = ''; }
+  calculateMargin();
+}
+
+function onCarNameInput() {
+  const cName = val('vCarName').toLowerCase();
+  const sp = $('calcSupport'); const fn = $('calcFin'); const chk = $('useTISupport');
+  if (cName.includes('c5') || cName.includes('j7') || cName.includes('j8')) { chk.checked = true; sp.value = '150 000'; fn.value = '100 000'; } 
+  else if (cName.includes('s5') || cName.includes('c7')) { chk.checked = true; sp.value = '200 000'; fn.value = '100 000'; } 
+  else if (cName.includes('j6')) { chk.checked = true; sp.value = '250 000'; fn.value = '100 000'; } 
+  else { chk.checked = false; sp.value = ''; fn.value = ''; }
+  renderKP(); calculateMargin();
+}
 
 function calculateMargin() {
   const cName = val('vCarName').toLowerCase();
@@ -894,13 +878,11 @@ $('vCarImg').addEventListener('change', function(e) {
 
 function renderMiniGallery() {
   const gal = $('mini-gallery'); gal.innerHTML = '';
-  if(db.imgCars){
-    db.imgCars.forEach((src, i) => {
-      let img = document.createElement('img');
-      img.src = src; img.style.width = '60px'; img.style.height = '40px'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px'; img.style.border = '1px solid #d1d5db';
-      gal.appendChild(img);
-    });
-  }
+  db.imgCars.forEach((src, i) => {
+    let img = document.createElement('img');
+    img.src = src; img.style.width = '60px'; img.style.height = '40px'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px'; img.style.border = '1px solid #d1d5db';
+    gal.appendChild(img);
+  });
 }
 
 function autoNumDate() {
@@ -1161,6 +1143,7 @@ function checkTelegram() {
 window.onload = () => {
   renderLists(); renderMiniGallery(); renderKP(); checkTelegram(); loadCatalogFromGoogle();
   
+  // Привязка автокалькуляции кредита при ручном вводе цены
   let pf = $('vPriceNew');
   if(pf) { pf.addEventListener('input', () => { calculateMargin(); calculateCredit('price'); renderKP(); }); }
 };

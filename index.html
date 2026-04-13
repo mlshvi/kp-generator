@@ -259,97 +259,65 @@ body.mobile-view .doc-equip { column-count: 1; }
     <textarea id="vCarEq" placeholder="Подарки от дилера" oninput="renderKP()"></textarea>
     <textarea id="vCarStdEq" placeholder="Базовое оснащение" oninput="renderKP()"></textarea>
 
-    <label class="form-label">ДОПОЛНИТЕЛЬНОЕ ОБОРУДОВАНИЕ</label>
-<button class="btn" style="width: 100%; margin-bottom: 15px; background-color: #4b5563; color: white;" onclick="openDopsModal()">⚙️ Выбрать и добавить допы</button>
-<div id="dops-summary" class="hint" style="display: none; color: #059669; font-weight: bold; margin-bottom: 10px;"></div>
+    <h3>Дополнительное оборудование</h3>
+    <button class="btn-sec" onclick="openDopsModal()" style="background: #4b5563;">⚙️ Выбрать и добавить допы</button>
+    <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
 
-<label class="form-label">ЦЕНА АВТОМОБИЛЯ</label>
-<div class="row">
-  <input id="vPriceOld" type="text" placeholder="МЦП (Базовая цена)" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); renderKP(); calculateMargin()">
-  <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); renderKP(); calculateMargin(); calculateCredit('price');">
-</div>
+    <div class="row" style="margin-top: 5px;">
+      <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+    </div>
 
-<!-- КАЛЬКУЛЯТОР СДЕЛКИ (ФИЗ) -->
-<div class="margin-calc" style="background: #fef08a; border: 1px solid #fde047; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-  <div class="margin-calc-header" style="display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; color: #854d0e;" onclick="toggleCalc('calcContent', 'calcToggleIcon')">
-    <span>💼 КАЛЬКУЛЯТОР СДЕЛКИ (ФИЗ)</span>
-    <span id="calcToggleIcon">▶</span>
-  </div>
-  <div id="calcContent" style="display: none; padding-top: 10px;">
-    <span class="hint">Данные не выводятся на печать и в PDF</span>
-    <div class="row">
-      <input type="text" id="calcCostCar" placeholder="Себес. авто" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateMargin()">
-      <input type="text" id="calcCostDops" placeholder="Себес. допов" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateMargin()">
-    </div>
-    
-    <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; color: #1f2937; font-weight: bold;">
-      <input type="checkbox" id="useTISupport" onchange="toggleTISupport()"> Добавить поддержку по ТИ
-    </label>
-    
-    <div class="row">
-      <input type="text" id="calcSupport" placeholder="Поддержка" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateMargin()">
-      <input type="text" id="calcFin" placeholder="Фин. услуги" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateMargin()">
-    </div>
-    <div class="margin-result">
-      <div style="color:#6b7280; font-weight:normal; font-size:11px; margin-bottom:8px; line-height: 1.3;">
-        <b>O/J:</b> (Цена - Авто - Допы)/1.22 + Поддержка + Фин/1.22<br>
-        <b>Belgee:</b> (Цена - Авто - Допы)/1.22 + Поддержка/1.22 + Фин/1.22
+    <div class="margin-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('calcContent', 'calcToggleIcon')">
+        <span>💼 Калькулятор сделки (Физ)</span>
+        <span id="calcToggleIcon">▶</span>
       </div>
-      <div style="margin-bottom: 4px;">Маржа Omoda/JAECOO: <span id="outMarginOmoda">0 ₽</span></div>
-      <div>Маржа BELGEE: <span id="outMarginBelgee">0 ₽</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- КАЛЬКУЛЯТОР ПРЕМИИ OJ (ЮР.ЛИЦА) -->
-<div class="margin-calc oj-calc" style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-  <div class="margin-calc-header" style="display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; color: #0369a1;" onclick="toggleCalc('ojCalcContent', 'ojToggleIcon')">
-    <span>🏢 КАЛЬКУЛЯТОР ПРЕМИИ OJ</span>
-    <span id="ojToggleIcon">▶</span>
-  </div>
-  <div id="ojCalcContent" style="display: none; padding-top: 10px;">
-    <span class="hint" style="color: #0284c7;">Премия = Оплачено - (МЦП * (1 - Скидка))</span>
-    <div class="row">
-      <input type="text" id="ojFactPaid" placeholder="Оплачено (₽)" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateOjMargin()">
-      <input type="text" id="ojBasePrice" placeholder="МЦП" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateOjMargin()">
-    </div>
-    <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
-    <div class="margin-result" style="background: #f0f9ff; border: 1px dashed #7dd3fc;">
-      <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- КРЕДИТНЫЙ КАЛЬКУЛЯТОР -->
-<div class="margin-calc credit-calc" style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-  <div class="margin-calc-header" style="display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; color: #047857;" onclick="toggleCalc('creditCalcContent', 'creditToggleIcon')">
-    <span>💳 КРЕДИТНЫЙ КАЛЬКУЛЯТОР</span>
-    <span id="creditToggleIcon">▶</span>
-  </div>
-  <div id="creditCalcContent" style="display: none; padding-top: 10px;">
-    <span class="hint" style="color: #059669;">Рассчитывается от Цены со скидкой</span>
-    <div class="row">
-      <input type="number" id="creditTerm" placeholder="Срок (мес)" value="84" oninput="calculateCredit('term')">
-      <input type="text" id="creditRate" placeholder="Ставка (%)" value="19.9" oninput="calculateCredit('rate')">
-    </div>
-    <div class="row">
-      <div>
-        <span class="hint" style="margin-bottom: 2px;">Взнос (₽):</span>
-        <input type="text" id="creditInitialRub" placeholder="Сумма" oninput="this.value = this.value.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ' '); calculateCredit('rub')">
-      </div>
-      <div>
-        <span class="hint" style="margin-bottom: 2px;">Взнос (%):</span>
-        <input type="number" id="creditInitialPct" placeholder="Процент" oninput="calculateCredit('pct')">
+      <div id="calcContent" style="display: none; padding-top: 10px;">
+        <span class="hint">Данные не выводятся на печать и в PDF</span>
+        <div class="row">
+          <input type="text" id="calcCostCar" placeholder="Себес. авто" oninput="formatInputNumber(this); calculateMargin()">
+          <input type="text" id="calcCostDops" placeholder="Себес. допов" oninput="formatInputNumber(this); calculateMargin()">
+        </div>
+        
+        <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; color: #1f2937; font-weight: bold;">
+          <input type="checkbox" id="useTISupport" onchange="toggleTISupport()"> Добавить поддержку по ТИ
+        </label>
+        
+        <div class="row">
+          <input type="text" id="calcSupport" placeholder="Поддержка" oninput="formatInputNumber(this); calculateMargin()">
+          <input type="text" id="calcFin" placeholder="Фин. услуги" oninput="formatInputNumber(this); calculateMargin()">
+        </div>
+        <div class="margin-result">
+          <div style="color:#6b7280; font-weight:normal; font-size:11px; margin-bottom:8px; line-height: 1.3;">
+            <b>Omoda/Jaecoo:</b> (Цена - Авто - Допы)/1.22 + Поддержка + Фин/1.22<br>
+            <b>Belgee:</b> (Цена - Авто - Допы)/1.22 + Поддержка/1.22 + Фин/1.22
+          </div>
+          <div style="margin-bottom: 4px;">Маржа Omoda/JAECOO: <span id="outMarginOmoda">0 ₽</span></div>
+          <div>Маржа BELGEE: <span id="outMarginBelgee">0 ₽</span></div>
+        </div>
       </div>
     </div>
-    <div class="margin-result" style="background: #f0fdf4; border: 1px dashed #6ee7b7;">
-      <div style="margin-bottom: 10px;">Платеж: <span id="outCreditPayment" style="color:#065f46; font-size: 16px;">0 ₽</span></div>
-      <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #065f46; font-weight: bold;">
-        <input type="checkbox" id="showCreditInKP" onchange="renderKP()"> ☑️ Показать в КП
-      </label>
+
+    <div class="margin-calc oj-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('ojCalcContent', 'ojToggleIcon')">
+        <span>🏢 Калькулятор премии OJ (Юр.Лица)</span>
+        <span id="ojToggleIcon">▶</span>
+      </div>
+      <div id="ojCalcContent" style="display: none; padding-top: 10px;">
+        <span class="hint">Премия = Оплачено - (МЦП * (1 - Скидка))</span>
+        <div class="row">
+          <input type="text" id="ojFactPaid" placeholder="Оплачено дилером (₽)" oninput="formatInputNumber(this); calculateOjMargin()">
+          <input type="text" id="ojBasePrice" placeholder="МЦП (Базовая стоимость)" oninput="formatInputNumber(this); calculateOjMargin()">
+        </div>
+        <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
+        <div class="margin-result">
+          <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+
+    <span class="hint" style="margin-top: 15px; display:block;">Фото авто (можно выделить до 3 шт):</span>
     <input type="file" id="vCarImg" accept="image/*" multiple class="hint" title="Выберите от 1 до 3 фото">
     
     <div id="mini-gallery" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"></div>

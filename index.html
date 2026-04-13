@@ -265,7 +265,7 @@ body.mobile-view .doc-equip { column-count: 1; }
 
     <div class="row" style="margin-top: 5px;">
       <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
-      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin(); calculateCredit('price');">
     </div>
 
     <div class="margin-calc">
@@ -313,6 +313,37 @@ body.mobile-view .doc-equip { column-count: 1; }
         <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
         <div class="margin-result">
           <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- КРЕДИТНЫЙ КАЛЬКУЛЯТОР (ИНТЕГРИРОВАН) -->
+    <div class="margin-calc credit-calc" style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+      <div class="margin-calc-header" style="color: #047857;" onclick="toggleCalc('creditCalcContent', 'creditToggleIcon')">
+        <span>💳 Кредитный калькулятор</span>
+        <span id="creditToggleIcon">▶</span>
+      </div>
+      <div id="creditCalcContent" style="display: none; padding-top: 10px;">
+        <span class="hint" style="color: #059669;">Рассчитывается от Цены со скидкой</span>
+        <div class="row">
+          <input type="number" id="creditTerm" placeholder="Срок (мес)" value="84" oninput="calculateCredit('term')" style="border-color:#6ee7b7; background:#f0fdf4;">
+          <input type="number" id="creditRate" placeholder="Ставка (%)" value="19.9" step="0.1" oninput="calculateCredit('rate')" style="border-color:#6ee7b7; background:#f0fdf4;">
+        </div>
+        <div class="row">
+          <div>
+            <span class="hint" style="margin-bottom: 2px;">Взнос (₽):</span>
+            <input type="text" id="creditInitialRub" placeholder="Сумма" oninput="formatInputNumber(this); calculateCredit('rub')" style="border-color:#6ee7b7; background:#f0fdf4;">
+          </div>
+          <div>
+            <span class="hint" style="margin-bottom: 2px;">Взнос (%):</span>
+            <input type="number" id="creditInitialPct" placeholder="Процент" oninput="calculateCredit('pct')" style="border-color:#6ee7b7; background:#f0fdf4;">
+          </div>
+        </div>
+        <div class="margin-result" style="border-top-color: rgba(4,120,87,0.2);">
+          <div style="margin-bottom: 10px;">Платеж: <span id="outCreditPayment" style="color:#065f46; font-size: 16px;">0 ₽</span></div>
+          <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #065f46; font-weight: bold;">
+            <input type="checkbox" id="showCreditInKP" onchange="renderKP()"> ☑️ Добавить блок в КП
+          </label>
         </div>
       </div>
     </div>
@@ -419,6 +450,17 @@ body.mobile-view .doc-equip { column-count: 1; }
         <div class="doc-price-new" id="outPriceNew">—</div>
       </div>
       <div class="doc-discount" id="outDiscount" style="display:none;">Выгода —</div>
+    </div>
+
+    <!-- ВЫВОД КРЕДИТА В ДОКУМЕНТЕ -->
+    <div id="docCreditBadge" style="background: #dcfce7; color: #166534; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 15px; display: none; align-items: center; justify-content: space-between; page-break-inside: avoid;">
+      <div style="font-size: 12px; line-height: 1.4;">
+        <b>Комфортный автокредит:</b><br>
+        Взнос: <span id="docCreditDownpay">0 ₽</span> / Срок: <span id="docCreditTerm">0 мес.</span>
+      </div>
+      <div style="font-size: 18px; font-weight: bold;">
+        от <span id="docCreditFinalPay">0 ₽/мес</span>
+      </div>
     </div>
 
     <div class="doc-footer">
@@ -858,6 +900,7 @@ function applyCatalog() {
   
   document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
   db.imgCars = []; saveDB(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
+  calculateCredit('price'); // Пересчет кредита при загрузке цены из каталога
   showToast("✅ Автомобиль загружен из каталога");
 }
 
@@ -902,6 +945,54 @@ function renderGallery() {
 }
 
 function removePhoto(idx) { if (!db.imgCars) return; db.imgCars.splice(idx, 1); saveDB(); renderGallery(); renderKP(); }
+
+// ФУНКЦИЯ РАСЧЕТА КРЕДИТА
+function calculateCredit(source) {
+  let price = getNum(val('vPriceNew')); 
+  let rubInput = $('creditInitialRub');
+  let pctInput = $('creditInitialPct');
+  
+  let rub = getNum(rubInput.value);
+  let pct = parseFloat(pctInput.value) || 0;
+
+  if (price > 0) {
+    if (source === 'rub') {
+      pct = (rub / price) * 100;
+      pctInput.value = pct > 0 ? pct.toFixed(1) : '';
+    } else if (source === 'pct' || source === 'price') {
+      rub = price * (pct / 100);
+      if (rub > 0) {
+        rubInput.value = rub;
+        formatInputNumber(rubInput); 
+      } else {
+        rubInput.value = '';
+      }
+    }
+  }
+
+  let principal = price - getNum(rubInput.value);
+  let term = parseInt(val('creditTerm')) || 0;
+  let rate = parseFloat(val('creditRate')) || 0;
+  let payment = 0;
+
+  if (principal > 0 && term > 0) {
+    if (rate > 0) {
+      let monthlyRate = (rate / 100) / 12;
+      payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+    } else {
+      payment = principal / term;
+    }
+  }
+
+  let finalPayment = Math.round(payment);
+  let finalRub = getNum(rubInput.value);
+
+  if ($('outCreditPayment')) $('outCreditPayment').textContent = finalPayment > 0 ? finalPayment.toLocaleString('ru-RU') + ' ₽' : '0 ₽';
+  
+  if ($('docCreditFinalPay')) $('docCreditFinalPay').textContent = finalPayment > 0 ? finalPayment.toLocaleString('ru-RU') + ' ₽/мес' : '0 ₽/мес';
+  if ($('docCreditDownpay')) $('docCreditDownpay').textContent = finalRub.toLocaleString('ru-RU') + ' ₽';
+  if ($('docCreditTerm')) $('docCreditTerm').textContent = term + ' мес.';
+}
 
 function renderKP() {
   const dc = $('document-container');
@@ -969,6 +1060,13 @@ function renderKP() {
       else { $('outDiscount').style.display = 'none'; }
   }
 
+  // Показывать/скрывать блок кредита в документе
+  const creditBadge = $('docCreditBadge');
+  const showCreditCb = $('showCreditInKP');
+  if (creditBadge && showCreditCb) {
+    creditBadge.style.display = showCreditCb.checked ? 'flex' : 'none';
+  }
+
   if ($('outMgrName')) $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера'; 
   if ($('outMgrPhone')) $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон'; 
   if ($('outMgrEmail')) $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
@@ -989,11 +1087,16 @@ function autoNumDate() {
 
 function confirmClear() {
   if(confirm("Очистить все данные в анкете?")) {
-    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail'].forEach(id => setVal(id, ''));
+    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail','creditInitialRub','creditInitialPct'].forEach(id => setVal(id, ''));
     document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
-    db.imgCars = []; const cb = $('useTISupport'); if(cb) cb.checked = false; currentCatalogSupport = "";
-    saveDB(); renderGallery(); renderKP(); const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
-    calculateMargin(); calculateOjMargin(); showToast("Анкета очищена!");
+    db.imgCars = []; 
+    if($('useTISupport')) $('useTISupport').checked = false; 
+    if($('showCreditInKP')) $('showCreditInKP').checked = false;
+    currentCatalogSupport = "";
+    saveDB(); renderGallery(); renderKP(); 
+    const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
+    calculateMargin(); calculateOjMargin(); calculateCredit('price');
+    showToast("Анкета очищена!");
   }
 }
 
@@ -1032,6 +1135,7 @@ function loadItem(type, idx) {
       i.dops.forEach(d => { let cb = document.getElementById(d.id); let pr = document.getElementById(d.id + '_price'); if (cb) cb.checked = true; if (pr) pr.value = d.price; });
     }
     ['vPriceOld', 'vPriceNew'].forEach(id => { let el = $(id); if(el && el.value) formatInputNumber(el); });
+    calculateCredit('price');
   }
   switchTab('tab-data', document.querySelector('.tab')); renderKP(); showToast("✅ Данные загружены!");
 }

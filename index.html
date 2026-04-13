@@ -1164,6 +1164,89 @@ try {
 
 // Запускаем фоновую загрузку цен
 loadCatalogFromGoogle();
+  // Функция форматирования чисел (добавляет пробелы тысяч: 1 000 000)
+function formatNum(num) {
+  return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+// Извлечение чистых цифр из поля (например, из "2 500 000 ₽" сделает 2500000)
+function getCleanNum(id) {
+  let el = document.getElementById(id);
+  if (!el) return 0;
+  return Number(el.value.replace(/\D/g, '')) || 0;
+}
+
+// Главная функция калькулятора
+function runCreditCalc(source) {
+  // Получаем цену авто (замените 'vPriceNew' на ID вашего поля с финальной ценой)
+  let price = getCleanNum('vPriceNew'); 
+  
+  let rubInput = document.getElementById('creditRub');
+  let pctInput = document.getElementById('creditPct');
+  
+  let rub = getCleanNum('creditRub');
+  let pct = parseFloat(pctInput.value) || 0;
+
+  // Синхронизация полей "Взнос в рублях" и "Взнос в %"
+  if (price > 0) {
+    if (source === 'rub') {
+      pct = (rub / price) * 100;
+      pctInput.value = pct > 0 ? pct.toFixed(1) : '';
+    } else if (source === 'pct' || source === 'price') {
+      rub = price * (pct / 100);
+      rubInput.value = rub > 0 ? formatNum(rub) : '';
+    }
+  }
+
+  // Применяем пробелы для красивого отображения в поле "Взнос в рублях"
+  if (source === 'rub' && rubInput.value !== '') {
+     let cursor = rubInput.selectionStart;
+     let oldLen = rubInput.value.length;
+     rubInput.value = formatNum(rub);
+     let newLen = rubInput.value.length;
+     try { rubInput.setSelectionRange(cursor + (newLen - oldLen), cursor + (newLen - oldLen)); } catch(e){}
+  }
+
+  let principal = price - rub; // Тело кредита
+  let term = Number(document.getElementById('creditTerm').value) || 0;
+  let rate = parseFloat(document.getElementById('creditRate').value) || 0;
+  
+  let payment = 0;
+
+  // Формула аннуитетного платежа
+  if (principal > 0 && term > 0) {
+    if (rate > 0) {
+      let monthlyRate = (rate / 100) / 12;
+      payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+    } else {
+      // Если ставка 0% (рассрочка)
+      payment = principal / term;
+    }
+  }
+
+  // Вывод данных в левую панель
+  document.getElementById('outPayment').innerText = payment > 0 ? formatNum(payment) + ' ₽' : '0 ₽';
+  
+  // Вывод данных в сам документ (справа)
+  document.getElementById('docCreditFinalPay').innerText = formatNum(payment);
+  document.getElementById('docCreditDownpay').innerText = formatNum(rub);
+  document.getElementById('docCreditTerm').innerText = term;
+}
+
+// Функция для показа/скрытия блока кредита в самом КП
+function toggleCreditInDoc() {
+  let checkbox = document.getElementById('showCreditInDoc');
+  let badge = document.getElementById('docCreditBadge');
+  
+  if (checkbox && checkbox.checked) {
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Если у вас есть функция, которая вызывается при ручном вводе цены (например oninput="renderKP()"),
+// нужно добавить в нее вызов runCreditCalc('price'), чтобы кредит пересчитывался при изменении цены машины.
 </script>
 </body>
 </html>

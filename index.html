@@ -609,7 +609,7 @@ const BASE_CATALOG = {
 "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
 }
 };
-  let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
+let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
 
 function loadCatalogFromGoogle() {
 const loader = $('catalog-loader');
@@ -626,13 +626,17 @@ const model = (row['Модель']||'').trim();
 const trim = (row['Комплектация']||'').trim();
 const pOld = (row['Базовая цена']||'').trim();
 const pNew = (row['Цена со скидкой']||'').trim();
+const cost = (row['Себестоимость']||'').trim(); // <-- Добавлено чтение себестоимости
+const photo = (row['Фото']||'').trim();         // <-- Добавлено чтение фото
 
       if(brand && model && trim && CATALOG[brand] && CATALOG[brand][model] && CATALOG[brand][model][trim]) {
         CATALOG[brand][model][trim].priceOld = pOld;
         CATALOG[brand][model][trim].priceNew = pNew;
+        CATALOG[brand][model][trim].cost = cost;      // <-- Сохраняем себестоимость
+        CATALOG[brand][model][trim].photo = photo;    // <-- Сохраняем фото
       }
     });
-    if(loader) { loader.innerText = "✅ Каталог загружен (с ценами)"; loader.style.color = "#059669"; }
+    if(loader) { loader.innerText = "✅ Каталог загружен (с ценами и фото)"; loader.style.color = "#059669"; }
   }
   initCatalogUI();
 },
@@ -676,8 +680,21 @@ setVal('vCarName', `${b} ${m}`);
 setVal('vCarPkg', t);
 setVal('vCarSpecs', data.specs || "");
 setVal('vCarStdEq', data.stdEq || "");
-setVal('vPriceOld', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
-setVal('vPriceNew', data.priceNew ? formatInputNumber({value: data.priceNew, selectionStart:0}) || data.priceNew : "");
+
+// Удобная функция для форматирования чисел с пробелами
+const formatStr = str => { let v = String(str).replace(/\D/g, ''); return v ? v.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : ''; };
+
+setVal('vPriceOld', formatStr(data.priceOld));
+setVal('vPriceNew', formatStr(data.priceNew));
+setVal('calcCostCar', formatStr(data.cost)); // <-- Автоподстановка себестоимости
+
+// Автоподстановка фото (если ссылок несколько через запятую, берем до 3 шт)
+if(data.photo) {
+  db.imgCars = data.photo.split(',').map(s => s.trim()).filter(s => s).slice(0, 3);
+} else {
+  db.imgCars = [];
+}
+renderMiniGallery();
 
 showToast('✅ Автомобиль загружен из каталога');
 renderKP(); calculateMargin(); calculateCredit('price');

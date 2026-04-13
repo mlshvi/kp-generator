@@ -605,6 +605,7 @@ const BASE_CATALOG = {
     "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
   }
 };
+let db = JSON.parse(localStorage.getItem('dealer_kp_db')) || { mgrs: [], tpls: [], imgLogo: '', imgCars: [], customDops: [], counter: 1 };
 let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
 
 // Защита от переполнения памяти браузера фотографиями
@@ -614,7 +615,7 @@ function saveDB() {
   } catch (e) {
     if (e.name === 'QuotaExceededError') {
       showToast('⚠️ Память переполнена! Фото слишком тяжелые. Фотографии сброшены.', true);
-      db.imgCars = []; // Сбрасываем фото, чтобы спасти работоспособность
+      db.imgCars = []; 
       localStorage.setItem('dealer_kp_db', JSON.stringify(db));
       renderMiniGallery();
       renderKP();
@@ -632,7 +633,6 @@ function loadCatalogFromGoogle() {
       if(results.data && results.data.length > 0) {
         CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG)); 
         results.data.forEach(row => {
-          // Очищаем названия колонок от пробелов
           let cleanRow = {};
           for(let key in row) {
             cleanRow[key.trim()] = row[key];
@@ -642,22 +642,19 @@ function loadCatalogFromGoogle() {
           const model = (cleanRow['Модель']||'').trim();
           const trim = (cleanRow['Комплектация']||'').trim();
           
-          // БЕРЕМ ВАШИ КОЛОНКИ ИЗ СКРИНШОТА:
           const costCar = (cleanRow['Себестоимость'] || '').trim();
           const supportTI = (cleanRow['Поддержка ТИ'] || '').trim();
           const pOld = (cleanRow['Базовая цена']||'').trim();
 
-          // Проверяем точное совпадение
           if(brand && model && trim && CATALOG[brand] && CATALOG[brand][model] && CATALOG[brand][model][trim]) {
             CATALOG[brand][model][trim].priceOld = pOld;
             CATALOG[brand][model][trim].costCar = costCar;
             CATALOG[brand][model][trim].supportTI = supportTI;
           } else {
-            // Если название не совпало, выводим в консоль браузера, чтобы мы могли найти опечатку
             if(brand) console.warn(`Не найдено в базе: ${brand} | ${model} | ${trim}`);
           }
         });
-        if(loader) { loader.innerText = "✅ Каталог загружен. Проверьте совпадение названий!"; loader.style.color = "#059669"; }
+        if(loader) { loader.innerText = "✅ Каталог загружен. Выберите авто!"; loader.style.color = "#059669"; }
       }
       initCatalogUI();
     },
@@ -702,12 +699,9 @@ function applyCatalog() {
   setVal('vCarSpecs', data.specs || "");
   setVal('vCarStdEq', data.stdEq || "");
   
-  // Расставляем цены по полям
   setVal('vPriceOld', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
-  // Подставляем Базовую цену в Финальную (так как колонки "со скидкой" у вас нет), чтобы калькулятор не был пустым
   setVal('vPriceNew', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
   
-  // Отправляем данные в калькулятор маржи
   setVal('calcCostCar', data.costCar ? formatInputNumber({value: data.costCar, selectionStart:0}) || data.costCar : "");
   setVal('calcSupport', data.supportTI ? formatInputNumber({value: data.supportTI, selectionStart:0}) || data.supportTI : "");
   
@@ -727,13 +721,8 @@ function toggleCalc(contentId, iconId) {
   else { c.style.display = 'none'; i.innerText = '▶'; }
 }
 
-function toggleTISupport() {
-  calculateMargin();
-}
-
-function onCarNameInput() {
-  renderKP(); calculateMargin();
-}
+function toggleTISupport() { calculateMargin(); }
+function onCarNameInput() { renderKP(); calculateMargin(); }
 
 function calculateMargin() {
   const cName = val('vCarName').toLowerCase();
@@ -905,11 +894,13 @@ $('vCarImg').addEventListener('change', function(e) {
 
 function renderMiniGallery() {
   const gal = $('mini-gallery'); gal.innerHTML = '';
-  db.imgCars.forEach((src, i) => {
-    let img = document.createElement('img');
-    img.src = src; img.style.width = '60px'; img.style.height = '40px'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px'; img.style.border = '1px solid #d1d5db';
-    gal.appendChild(img);
-  });
+  if(db.imgCars){
+    db.imgCars.forEach((src, i) => {
+      let img = document.createElement('img');
+      img.src = src; img.style.width = '60px'; img.style.height = '40px'; img.style.objectFit = 'cover'; img.style.borderRadius = '4px'; img.style.border = '1px solid #d1d5db';
+      gal.appendChild(img);
+    });
+  }
 }
 
 function autoNumDate() {

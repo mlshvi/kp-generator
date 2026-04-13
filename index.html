@@ -605,7 +605,7 @@ const BASE_CATALOG = {
     "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
   }
 };
-  let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
+let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
 
 function loadCatalogFromGoogle() {
   const loader = $('catalog-loader');
@@ -617,23 +617,31 @@ function loadCatalogFromGoogle() {
       if(results.data && results.data.length > 0) {
         CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG)); 
         results.data.forEach(row => {
-          const brand = (row['Бренд']||'').trim();
-          const model = (row['Модель']||'').trim();
-          const trim = (row['Комплектация']||'').trim();
-          const pOld = (row['Базовая цена']||'').trim();
-          const pNew = (row['Цена со скидкой']||'').trim();
+          // Очищаем названия колонок от случайных пробелов
+          let cleanRow = {};
+          for(let key in row) {
+            cleanRow[key.trim()] = row[key];
+          }
+
+          const brand = (cleanRow['Бренд']||'').trim();
+          const model = (cleanRow['Модель']||'').trim();
+          const trim = (cleanRow['Комплектация']||'').trim();
+          const pOld = (cleanRow['Базовая цена']||'').trim();
+          const pNew = (cleanRow['Цена со скидкой']||'').trim();
+          const costCar = (cleanRow['Себестоимость'] || '').trim(); // Берем себестоимость
 
           if(brand && model && trim && CATALOG[brand] && CATALOG[brand][model] && CATALOG[brand][model][trim]) {
             CATALOG[brand][model][trim].priceOld = pOld;
             CATALOG[brand][model][trim].priceNew = pNew;
+            CATALOG[brand][model][trim].costCar = costCar; // Сохраняем себестоимость
           }
         });
-        if(loader) { loader.innerText = "✅ Каталог загружен (с ценами)"; loader.style.color = "#059669"; }
+        if(loader) { loader.innerText = "✅ Каталог загружен (с ценами и себес.)"; loader.style.color = "#059669"; }
       }
       initCatalogUI();
     },
     error: function() {
-      if(loader) { loader.innerText = "⚠️ Не удалось загрузить цены. Работаем с базовым каталогом."; loader.style.color = "#d97706"; }
+      if(loader) { loader.innerText = "⚠️ Не удалось загрузить цены."; loader.style.color = "#d97706"; }
       initCatalogUI();
     }
   });
@@ -672,8 +680,11 @@ function applyCatalog() {
   setVal('vCarPkg', t);
   setVal('vCarSpecs', data.specs || "");
   setVal('vCarStdEq', data.stdEq || "");
+  
+  // Подставляем цены и себестоимость с авто-форматированием (пробелы между тысячами)
   setVal('vPriceOld', data.priceOld ? formatInputNumber({value: data.priceOld, selectionStart:0}) || data.priceOld : "");
   setVal('vPriceNew', data.priceNew ? formatInputNumber({value: data.priceNew, selectionStart:0}) || data.priceNew : "");
+  setVal('calcCostCar', data.costCar ? formatInputNumber({value: data.costCar, selectionStart:0}) || data.costCar : "");
   
   showToast('✅ Автомобиль загружен из каталога');
   renderKP(); calculateMargin(); calculateCredit('price');
@@ -1143,7 +1154,6 @@ function checkTelegram() {
 window.onload = () => {
   renderLists(); renderMiniGallery(); renderKP(); checkTelegram(); loadCatalogFromGoogle();
   
-  // Привязка автокалькуляции кредита при ручном вводе цены
   let pf = $('vPriceNew');
   if(pf) { pf.addEventListener('input', () => { calculateMargin(); calculateCredit('price'); renderKP(); }); }
 };

@@ -1,3 +1,958 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Генератор КП — Максимум</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;scroll-behavior:smooth;-webkit-font-smoothing:antialiased}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:10px}body{background:#060610;background-image:radial-gradient(ellipse 50% 40% at 15% 5%,rgba(58,106,232,.18),transparent 50%),radial-gradient(ellipse 40% 35% at 85% 15%,rgba(217,64,69,.12),transparent 50%);color:#f5f5f7;padding:20px;display:grid;grid-template-columns:420px 1fr;gap:24px;align-items:start;min-height:100vh}.panel{background:rgba(16,16,24,.92)!important;backdrop-filter:blur(60px) saturate(180%);-webkit-backdrop-filter:blur(60px) saturate(180%);padding:28px;border-radius:24px;border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto}.toolbar{margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;background:0!important;backdrop-filter:none!important;box-shadow:none!important;border:none!important;padding:0!important;border-radius:0!important}.toolbar button{margin:0;padding:14px 18px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;flex:1;white-space:nowrap;border-radius:14px;font-weight:700;transition:all .3s cubic-bezier(.34,1.56,.64,1);border:none!important;position:relative;overflow:hidden}.toolbar button:hover{transform:translateY(-3px) scale(1.02)}.toolbar button:active{transform:scale(.95)}.toolbar #btn-pdf{background:linear-gradient(135deg,rgba(255,255,255,.93),rgba(225,225,235,.9))!important;color:#12121e!important;box-shadow:0 4px 24px rgba(255,255,255,.1)!important}.toolbar #btn-pdf::before{content:'';position:absolute;top:8px;right:8px;width:7px;height:7px;background:#30d158;border-radius:50%;animation:pulse 2s ease infinite}@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(48,209,88,.5)}50%{box-shadow:0 0 0 6px rgba(48,209,88,0)}}.toolbar button:nth-child(2){background:linear-gradient(135deg,#3a6ae8,#1e4fc2)!important;color:#fff!important;box-shadow:0 4px 24px rgba(30,79,194,.3)!important}.toolbar button:nth-child(3){background:linear-gradient(135deg,#d94045,#b52a2f)!important;color:#fff!important;box-shadow:0 4px 24px rgba(217,64,69,.25)!important}@keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}h2{font-size:24px;margin-bottom:22px;font-weight:700;background:linear-gradient(135deg,#fff,#8ea4ff,#fff,#ff9ea4,#fff);background-size:400% 400%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 10s ease infinite}h3{font-size:11px;margin:28px 0 12px;color:#fff!important;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;padding:0 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.08);position:relative}h3::before{content:'';position:absolute;left:0;top:2px;width:6px;height:6px;border-radius:50%;background:#3a6ae8;box-shadow:0 0 8px rgba(58,106,232,.5)}h3::after{content:'';position:absolute;bottom:-1px;left:0;width:50px;height:2px;background:linear-gradient(90deg,#3a6ae8,transparent)}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hint{font-size:11px;color:rgba(255,255,255,.45);margin-top:-5px;margin-bottom:10px;display:block}label{color:#e5e5ea!important;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;line-height:1.4}label *{color:#e5e5ea!important}input:not([type="checkbox"]),select,textarea{width:100%;padding:12px 14px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;font-size:14px;margin-bottom:10px;outline:none;transition:all .25s;color:#fff;box-shadow:inset 0 2px 4px rgba(0,0,0,.15)}input::placeholder,textarea::placeholder{color:rgba(255,255,255,.25)}select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px;cursor:pointer}select option{background:#1a1a24;color:#e5e5ea}input:not([type="checkbox"]):focus,select:focus,textarea:focus{border-color:rgba(58,106,232,.7);background:rgba(255,255,255,.09);box-shadow:inset 0 2px 4px rgba(0,0,0,.15),0 0 0 3px rgba(58,106,232,.15)}textarea{resize:vertical;min-height:60px}input[type="checkbox"]{-webkit-appearance:none;-moz-appearance:none;appearance:none;width:22px;height:22px;min-width:22px;margin:0;cursor:pointer;flex-shrink:0;border-radius:7px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);transition:all .2s;position:relative}input[type="checkbox"]:checked{background:linear-gradient(135deg,#3a6ae8,#1e4fc2);border-color:transparent;box-shadow:0 2px 10px rgba(58,106,232,.35)}input[type="checkbox"]:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:14px;font-weight:700}input[type="checkbox"]:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.1)}button{width:100%;padding:12px;background:linear-gradient(135deg,#3a6ae8,#1e4fc2);color:#fff;border:none;border-radius:12px;cursor:pointer;font-weight:600;font-size:14px;margin-bottom:10px;transition:all .25s;box-shadow:0 2px 16px rgba(58,106,232,.2);position:relative;overflow:hidden}button::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);transition:left .5s}button:hover::after{left:120%}button:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(58,106,232,.3)}button:active{transform:scale(.96)}.btn-sec{background:rgba(255,255,255,.07);box-shadow:none;border:1.5px solid rgba(255,255,255,.12)}.btn-sec:hover{background:rgba(255,255,255,.13)}.btn-sec::after{display:none}.btn-green{background:linear-gradient(135deg,#30d158,#248a3d);color:#fff}.btn-red{background:rgba(255,69,58,.1);color:#ff453a;border:1.5px solid rgba(255,69,58,.2);box-shadow:none}.btn-red:hover{background:rgba(255,69,58,.2)}.btn-red::after{display:none}.tabs{display:flex;gap:3px;margin-bottom:22px;background:rgba(255,255,255,.04);padding:4px;border-radius:14px;border:1px solid rgba(255,255,255,.06);flex-wrap:wrap}.tab{padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;border-radius:11px;background:0;color:rgba(255,255,255,.4);flex-grow:1;text-align:center;transition:all .25s;border:none}.tab:hover{color:rgba(255,255,255,.7)}.tab.active{background:rgba(255,255,255,.12);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.3)}.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .3s}@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}.card{border:1.5px solid rgba(255,255,255,.07);padding:16px;border-radius:16px;margin-bottom:10px;background:rgba(255,255,255,.03);transition:all .3s}.card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);transform:translateY(-2px)}.card b{font-size:14px;display:block;margin-bottom:5px;color:#fff}.card p{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px}.card .acts{display:flex;gap:6px}.card button{margin:0;padding:7px;font-size:11px;border-radius:8px}.catalog-box{background:rgba(58,106,232,.05);padding:18px;border-radius:16px;margin-bottom:16px;border:1.5px solid rgba(58,106,232,.15)}.catalog-box h3{margin-top:0;color:#6b8ff7!important;border:none;padding-bottom:0}.catalog-box h3::after,.catalog-box h3::before{display:none}.margin-calc{background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.08);padding:18px;border-radius:16px;margin-bottom:10px;margin-top:5px;transition:all .3s}.margin-calc:hover{border-color:rgba(255,255,255,.14)}.margin-calc-header{color:#fff!important;margin:0;font-size:13px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;text-transform:uppercase;letter-spacing:.5px}.margin-calc-header:hover{opacity:.8}.margin-calc input{background:rgba(0,0,0,.2);border-color:rgba(255,255,255,.12);margin-bottom:5px}.margin-calc label{color:rgba(255,255,255,.75)!important}.margin-calc .hint{color:rgba(255,255,255,.45)!important}.margin-calc span,.margin-calc div{color:rgba(255,255,255,.7)!important}.margin-calc b{color:#fff!important}.oj-calc{background:rgba(58,106,232,.04);border-color:rgba(58,106,232,.18)}.oj-calc .margin-calc-header{color:#6b8ff7!important}.dealer-calc{margin:16px 0}.credit-calc{background:rgba(48,209,88,.04)!important;border:1.5px solid rgba(48,209,88,.18)!important}.credit-calc .margin-calc-header{color:#30d158!important}.credit-calc input{background:rgba(0,0,0,.2)!important;border-color:rgba(48,209,88,.2)!important;color:#fff!important}#creditCalcContent .hint,#creditCalcContent label{color:rgba(255,255,255,.55)!important}#outCreditPayment{color:#30d158!important}.margin-result{font-size:14px;font-weight:700;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px;color:rgba(255,255,255,.85)!important}.margin-result span{font-size:18px;color:#fff!important}.margin-result div{color:rgba(255,255,255,.7)!important}.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);backdrop-filter:blur(20px);display:flex;justify-content:center;align-items:center;z-index:1000;opacity:0;visibility:hidden;transition:all .35s}.modal-overlay.active{opacity:1;visibility:visible}.modal-content{background:rgba(22,22,30,.96);backdrop-filter:blur(60px) saturate(180%);border:1px solid rgba(255,255,255,.1);padding:28px;border-radius:24px;width:95%;max-width:550px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 40px 100px rgba(0,0,0,.65);transform:scale(.88) translateY(40px);transition:all .45s;color:#fff}.modal-overlay.active .modal-content{transform:none}.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-header h2{margin:0;font-size:18px}.close-btn{background:rgba(255,255,255,.08)!important;border:none!important;font-size:18px;cursor:pointer;color:rgba(255,255,255,.45);width:34px!important;height:34px;padding:0;margin:0;box-shadow:none!important;border-radius:50%!important;display:flex;align-items:center;justify-content:center;transition:all .25s}.close-btn:hover{color:#fff;background:rgba(255,255,255,.15)!important;transform:rotate(90deg)}.dops-list-container{overflow-y:auto;padding-right:5px;flex-grow:1;margin-bottom:15px}.dop-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}.dop-label{font-size:13px;display:flex;gap:12px;align-items:center;cursor:pointer;flex:1;color:#e5e5ea!important}.dop-price-input{width:90px!important;padding:8px!important;text-align:right;margin:0!important;font-weight:700;background:rgba(0,0,0,.25)!important;border-radius:8px!important}.del-dop-btn{background:rgba(255,69,58,.1)!important;color:#ff453a;width:30px;height:30px;border-radius:8px;display:flex;justify-content:center;align-items:center;padding:0;margin:0 0 0 8px;font-size:16px;box-shadow:none!important}.del-dop-btn:hover{background:rgba(255,69,58,.25)!important}.custom-add-box{background:rgba(255,255,255,.02);padding:16px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.1);margin-bottom:16px}.custom-add-grid{display:grid;grid-template-columns:1fr 100px 90px;gap:8px}.custom-add-grid input,.custom-add-grid button{margin:0}#toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:9999}.toast{background:rgba(30,30,38,.96);backdrop-filter:blur(24px);color:#fff;padding:16px 24px;border-radius:16px;font-size:14px;border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 48px rgba(0,0,0,.5);opacity:0;transform:translateY(24px) scale(.88);transition:all .5s;position:relative;overflow:hidden}.toast::after{content:'';position:absolute;bottom:0;left:0;height:2px;background:linear-gradient(90deg,#3a6ae8,#30d158);animation:tp 3s linear forwards}@keyframes tp{from{width:100%}to{width:0}}.toast.show{opacity:1;transform:none}.toast.error{background:rgba(255,59,48,.95)}.preview-wrap{display:flex;flex-direction:column;gap:16px}#document-container{width:210mm;min-height:297mm;background:#fff!important;color:#000!important;border-radius:16px;box-shadow:0 30px 100px rgba(0,0,0,.7);padding:12mm 15mm;margin:0 auto;display:flex;flex-direction:column}#document-container *{color:#111}.doc-meta{text-align:right;font-size:12px;color:#4b5563!important}.doc-title{text-align:center;font-size:20px;font-weight:700;margin-bottom:15px;color:#000!important}.doc-top-line{height:5px;border-radius:10px;margin-bottom:15px;display:none}.doc-header{display:flex;justify-content:space-between;margin-bottom:15px}.doc-dealer{display:flex;gap:12px}.doc-logo{width:90px;height:90px;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;padding:4px;flex-shrink:0}.doc-logo img{width:100%;height:100%;object-fit:contain}.doc-logo span{font-size:10px;color:#9ca3af!important}.doc-main{display:flex;gap:15px;margin-bottom:15px}.doc-info{flex:1}.doc-car-name{font-size:22px;font-weight:700;margin-bottom:5px;color:#000!important}.doc-package{display:inline-block;padding:4px 8px;background:#eff6ff!important;color:#1d4ed8!important;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:10px}.doc-specs{white-space:pre-line;font-size:12px;line-height:1.4;margin-bottom:10px;color:#374151!important}.doc-equip{padding-left:15px;font-size:11px;line-height:1.4;column-count:2;column-gap:15px}.doc-equip li{break-inside:avoid;margin-bottom:3px}.doc-photo{width:45%;display:flex;justify-content:flex-end;align-items:flex-start}.doc-photo-box{width:100%;display:flex;justify-content:flex-end}.doc-photo-box img{max-width:100%;max-height:220px;border-radius:8px;object-fit:contain}.doc-photo-box span{font-size:12px;color:#9ca3af!important;padding:20px;background:#f3f4f6!important;border-radius:8px;width:100%;text-align:center}.doc-price-box{display:flex;justify-content:space-between;align-items:center;padding:15px;border-radius:10px;margin-bottom:15px;break-inside:avoid}.doc-price-old{text-decoration:line-through;font-size:16px;color:#6b7280!important}.doc-price-new{font-size:28px;font-weight:700;color:#000!important}.doc-discount{padding:4px 10px;border-radius:20px;font-weight:700;font-size:12px}.doc-footer{display:grid;grid-template-columns:1fr 1fr;gap:15px;border-top:1px solid #e5e7eb;padding-top:15px;font-size:12px;break-inside:avoid;margin-bottom:30px;color:#374151!important}.theme-premium .doc-top-line{display:block;background:linear-gradient(90deg,#1f2937,#2563eb)!important}.theme-premium .doc-price-box{background:linear-gradient(135deg,#f8fafc,#eff6ff)!important;border:1px solid #dbeafe!important}.theme-premium .doc-price-new{color:#059669!important}.theme-premium .doc-discount{background:#dcfce7!important;color:#166534!important}.theme-official{border:1px solid #d1d5db!important;box-shadow:none!important;border-radius:0!important}.theme-official .doc-header{border-bottom:2px solid #111!important;padding-bottom:15px}.theme-official .doc-main{flex-direction:column}.theme-official .doc-photo{width:100%;justify-content:center}.theme-official .doc-photo-box{justify-content:center}.theme-official .doc-package{border:1px solid #111!important;background:0!important;color:#111!important;border-radius:0!important}.theme-official .doc-price-box{border:2px solid #111!important;background:0!important;border-radius:0!important}.theme-official .doc-price-new{color:#111!important}.theme-official .doc-discount{border:1px solid #111!important;background:#fff!important;color:#111!important;border-radius:0!important}.theme-official .doc-photo-box img,.theme-official .doc-logo{border-radius:0}.theme-catalog .doc-top-line{display:none}.theme-catalog .doc-main{flex-direction:column-reverse;gap:0}.theme-catalog .doc-photo{margin:-12mm -15mm 15px;width:calc(100% + 30mm);background:#f3f4f6!important;padding:15px 0;border-radius:12px 12px 0 0}.theme-catalog .doc-photo-box{display:grid;gap:15px;padding:0 15px;width:100%;align-items:center;justify-items:center}.theme-catalog .doc-photo-box[data-count="1"]{display:flex;justify-content:center}.theme-catalog .doc-photo-box[data-count="1"] img{max-height:320px;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);background:#fff;padding:5px}.theme-catalog .doc-photo-box[data-count="2"]{grid-template-columns:1fr 1fr}.theme-catalog .doc-photo-box[data-count="3"]{grid-template-columns:1fr 1fr 1fr}.theme-catalog .doc-photo-box[data-count="2"] img,.theme-catalog .doc-photo-box[data-count="3"] img{width:100%;height:220px;object-fit:contain;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);background:#fff;padding:5px}.theme-catalog .doc-title{text-align:left;font-size:14px;color:#6b7280!important;letter-spacing:2px;margin:10px 0}.theme-catalog .doc-price-box{background:#f8fafc!important;border-radius:12px;flex-direction:column;align-items:flex-start;gap:5px}.theme-catalog .doc-package{background:#e2e8f0!important;color:#374151!important}.theme-catalog .doc-price-new{color:#111!important}.theme-catalog .doc-discount{background:#dbeafe!important;color:#1d4ed8!important}body.mobile-view{display:flex!important;flex-direction:column!important;padding:10px;gap:15px}body.mobile-view .panel{position:static;max-height:none;padding:15px;width:100%}body.mobile-view .row{grid-template-columns:1fr}body.mobile-view .toolbar{flex-direction:column;position:sticky;top:0;z-index:100;padding:15px}body.mobile-view .toolbar button{width:100%;margin:0}body.mobile-view #document-container{width:100%;padding:15px;min-height:auto}body.mobile-view .doc-header{flex-direction:column;gap:15px}body.mobile-view .doc-meta{text-align:left}body.mobile-view .doc-main{flex-direction:column}body.mobile-view .doc-photo{width:100%;margin-top:10px;justify-content:center}body.mobile-view .doc-photo-box{justify-content:center}body.mobile-view .theme-catalog .doc-photo{margin:-15px -15px 15px;width:calc(100% + 30px);border-radius:0}body.mobile-view .theme-catalog .doc-photo-box[data-count="2"],body.mobile-view .theme-catalog .doc-photo-box[data-count="3"]{grid-template-columns:1fr}body.mobile-view .doc-price-box{flex-direction:column;align-items:flex-start;gap:10px}body.mobile-view .doc-discount{align-self:flex-start}body.mobile-view .doc-footer{grid-template-columns:1fr}body.mobile-view .doc-equip{column-count:1}@media print{@page{size:A4;margin:0}body{display:block!important;background:#fff!important;padding:0!important}.panel,.toolbar,.telegram-warning,#toast-container{display:none!important}#document-container{box-shadow:none!important;margin:0!important;padding:15mm!important;width:100%!important;min-height:auto!important;border:none!important}.doc-price-box,.doc-footer,.doc-photo-box,#dealerEqBlock{break-inside:avoid}}.telegram-warning{display:none;background:rgba(255,159,10,.1);color:#ff9f0a;padding:10px;border-radius:8px;font-size:12px;margin-bottom:15px;border:1px solid rgba(255,159,10,.3);text-align:center}
+#scheduleTable td{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.75);text-align:right}#scheduleTable tr:hover td{background:rgba(48,209,88,.06)}#scheduleTable tr:nth-child(12n) td{border-bottom:2px solid rgba(48,209,88,.15)}.sched-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;text-align:center}.sched-card div:first-child{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:4px}.sched-card div:last-child{font-size:16px;font-weight:700;color:#fff}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<aside class="panel">
+  <h2>Генератор КП — Максимум</h2>
+
+  <div class="telegram-warning" id="tgWarning">
+    ⚠️ <b>Вы открыли сайт внутри мессенджера!</b><br>Для правильного скачивания нажмите на компас или откройте сайт в Safari / Chrome.
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('tab-data', this)">Данные КП</div>
+    <div class="tab" onclick="switchTab('tab-mgrs', this)">Менеджеры</div>
+    <div class="tab" onclick="switchTab('tab-saved', this)">Шаблоны</div>
+  </div>
+
+  <div id="tab-data" class="tab-content active">
+    <div class="catalog-box">
+      <h3>Быстрый выбор из каталога</h3>
+      <div id="catalog-loader" style="font-size: 12px; color: #2563eb; font-weight: bold; margin-bottom: 10px;">🔄 Подготовка каталога...</div>
+      
+      <select id="catBrand" onchange="updateModels()">
+        <option value="">-- Выберите бренд --</option>
+      </select>
+      <select id="catModel" onchange="updateTrims()" disabled>
+        <option value="">-- Выберите модель --</option>
+      </select>
+      <select id="catTrim" onchange="applyCatalog()" disabled>
+        <option value="">-- Выберите комплектацию --</option>
+      </select>
+    </div>
+
+    <h3>Дизайн КП</h3>
+    <select id="vTheme" onchange="renderKP()">
+      <option value="premium">Премиум (Презентация)</option>
+      <option value="official">Официальный (Бланк)</option>
+      <option value="catalog">Каталог (Больше фотографий)</option>
+    </select>
+
+    <div class="margin-calc dealer-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('dealerContent', 'dealerToggleIcon')">
+        <span>🏢 Автосалон и Логотип</span>
+        <span id="dealerToggleIcon">▶</span>
+      </div>
+      <div id="dealerContent" style="display: none; padding-top: 10px;">
+        <span class="hint" style="margin-bottom: 5px;">Загрузить свой логотип:</span>
+        <input type="file" id="vLogoImg" accept="image/*" style="margin-bottom: 10px;" class="hint">
+        <input id="vDName" placeholder="Название дилера" oninput="renderKP()">
+        <input id="vDAddr" placeholder="Адрес" oninput="renderKP()">
+        <input id="vDPhone" placeholder="Телефон" oninput="formatPhone(this); renderKP()">
+      </div>
+    </div>
+
+    <h3>Параметры документа</h3>
+    <div class="row">
+      <input id="vNum" placeholder="Номер КП" oninput="renderKP()">
+      <input id="vDate" placeholder="Срок (напр. до 15.10)" oninput="renderKP()">
+    </div>
+    <button class="btn-sec" onclick="autoNumDate()">Авто-номер и срок +7 дней</button>
+
+    <h3>Автомобиль</h3>
+    <input id="vCarName" placeholder="Марка и Модель" oninput="onCarNameInput()">
+    <input id="vCarPkg" placeholder="Комплектация" oninput="renderKP()">
+
+    <div class="row">
+      <input id="vCarVIN" placeholder="VIN-номер (если есть)" oninput="renderKP()">
+      <input id="vCarColor" placeholder="Цвет кузова" oninput="renderKP()">
+    </div>
+
+    <textarea id="vCarSpecs" placeholder="Характеристики (год, двигатель...)" oninput="renderKP()"></textarea>
+    <textarea id="vCarEq" placeholder="Подарки от дилера" oninput="renderKP()"></textarea>
+    <textarea id="vCarStdEq" placeholder="Базовое оснащение" oninput="renderKP()"></textarea>
+
+    <h3>Дополнительное оборудование</h3>
+    <button class="btn-sec" onclick="openDopsModal()" style="background: #4b5563;">⚙️ Выбрать и добавить допы</button>
+    <div id="dops-summary" style="font-size: 12px; color: #166534; font-weight: bold; margin-bottom: 15px; text-align: center; display: none;"></div>
+
+    <div class="row" style="margin-top: 5px;">
+      <input id="vPriceOld" type="text" placeholder="Базовая цена" oninput="formatInputNumber(this); renderKP(); calculateMargin()">
+      <input id="vPriceNew" type="text" placeholder="Цена со скидкой (Финальная)" oninput="formatInputNumber(this); renderKP(); calculateMargin(); calculateCredit('price');">
+    </div>
+
+    <div class="margin-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('calcContent', 'calcToggleIcon')">
+        <span>💼 Калькулятор сделки (Физ)</span>
+        <span id="calcToggleIcon">▶</span>
+      </div>
+      <div id="calcContent" style="display: none; padding-top: 10px;">
+        <span class="hint">Данные не выводятся на печать и в PDF</span>
+        <div class="row">
+          <input type="text" id="calcCostCar" placeholder="Себес. авто" oninput="formatInputNumber(this); calculateMargin()">
+          <input type="text" id="calcCostDops" placeholder="Себес. допов" oninput="formatInputNumber(this); calculateMargin()">
+        </div>
+        
+        <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; color: #1f2937; font-weight: bold;">
+          <input type="checkbox" id="useTISupport" onchange="toggleTISupport()"> Добавить поддержку по ТИ
+        </label>
+        
+        <div class="row">
+          <input type="text" id="calcSupport" placeholder="Поддержка" oninput="formatInputNumber(this); calculateMargin()">
+          <input type="text" id="calcFin" placeholder="Фин. услуги" oninput="formatInputNumber(this); calculateMargin()">
+        </div>
+        <div class="margin-result">
+          <div style="color:#6b7280; font-weight:normal; font-size:11px; margin-bottom:8px; line-height: 1.3;">
+            <b>Omoda/Jaecoo:</b> (Цена - Авто - Допы)/1.22 + Поддержка + Фин/1.22<br>
+            <b>Belgee:</b> (Цена - Авто - Допы)/1.22 + Поддержка/1.22 + Фин/1.22
+          </div>
+          <div style="margin-bottom: 4px;">Маржа Omoda/JAECOO: <span id="outMarginOmoda">0 ₽</span></div>
+          <div>Маржа BELGEE: <span id="outMarginBelgee">0 ₽</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="margin-calc oj-calc">
+      <div class="margin-calc-header" onclick="toggleCalc('ojCalcContent', 'ojToggleIcon')">
+        <span>🏢 Калькулятор премии OJ (Юр.Лица)</span>
+        <span id="ojToggleIcon">▶</span>
+      </div>
+      <div id="ojCalcContent" style="display: none; padding-top: 10px;">
+        <span class="hint">Премия = Оплачено - (МЦП * (1 - Скидка))</span>
+        <div class="row">
+          <input type="text" id="ojFactPaid" placeholder="Оплачено дилером (₽)" oninput="formatInputNumber(this); calculateOjMargin()">
+          <input type="text" id="ojBasePrice" placeholder="МЦП (Базовая стоимость)" oninput="formatInputNumber(this); calculateOjMargin()">
+        </div>
+        <input type="text" id="ojDiscount" placeholder="Скидка для дилера от МЦП (в %)" oninput="calculateOjMargin()">
+        <div class="margin-result">
+          <div>Причитающаяся премия: <span id="outOjPremium">0 ₽</span></div>
+        </div>
+      </div>
+    </div>
+
+  <!-- КРЕДИТНЫЙ КАЛЬКУЛЯТОР (ИНТЕГРИРОВАН) -->
+<div class="margin-calc credit-calc">
+  <div class="margin-calc-header" onclick="toggleCalc('creditCalcContent', 'creditToggleIcon')">
+    <span>💳 Кредитный калькулятор</span>
+    <span id="creditToggleIcon">▶</span>
+  </div>
+  <div id="creditCalcContent" style="display: none; padding-top: 10px;">
+    <span class="hint">Рассчитывается от Цены со скидкой + КАСКО + Фин.продукты</span>
+    <div class="row">
+      <input type="number" id="creditTerm" placeholder="Срок (мес)" value="84" oninput="calculateCredit('term')">
+      <input type="number" id="creditRate" placeholder="Ставка (%)" value="19.9" step="0.1" oninput="calculateCredit('rate')">
+    </div>
+    <div class="row">
+      <div>
+        <span class="hint" style="margin-bottom: 2px;">Взнос (₽):</span>
+        <input type="text" id="creditInitialRub" placeholder="Сумма" oninput="formatInputNumber(this); calculateCredit('rub')">
+      </div>
+      <div>
+        <span class="hint" style="margin-bottom: 2px;">Взнос (%):</span>
+        <input type="number" id="creditInitialPct" placeholder="Процент" oninput="calculateCredit('pct')">
+      </div>
+    </div>
+
+    <div style="background:rgba(48,209,88,.06); border:1px solid rgba(48,209,88,.15); border-radius:12px; padding:12px; margin:8px 0 12px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; color:rgba(255,255,255,.5);">Включить в сумму кредита:</div>
+      <div class="row">
+        <div>
+          <span class="hint" style="margin-bottom:2px;">КАСКО (₽):</span>
+          <input type="text" id="creditKasko" placeholder="0" oninput="formatInputNumber(this); calculateCredit('extra')">
+        </div>
+        <div>
+          <span class="hint" style="margin-bottom:2px;">Фин. продукты (₽):</span>
+          <input type="text" id="creditFinProducts" placeholder="0" oninput="formatInputNumber(this); calculateCredit('extra')">
+        </div>
+      </div>
+      <label style="margin-top:4px; margin-bottom:0;">
+        <input type="checkbox" id="creditIncludeExtras" onchange="calculateCredit('extra')" checked> Включить КАСКО и ФП в тело кредита
+      </label>
+    </div>
+
+    <div class="margin-result" style="border-top-color: rgba(48,209,88,.2);">
+      <div style="font-size:12px; color:rgba(255,255,255,.5)!important; margin-bottom:4px;">
+        Сумма кредита: <span id="outCreditBody" style="color:#fff!important; font-weight:700;">0 ₽</span>
+      </div>
+      <div style="font-size:12px; color:rgba(255,255,255,.5)!important; margin-bottom:4px;">
+        Переплата: <span id="outCreditOverpay" style="color:#ff6b6b!important; font-weight:700;">0 ₽</span>
+      </div>
+      <div style="margin-bottom: 10px;">Платеж: <span id="outCreditPayment">0 ₽</span></div>
+      <button class="btn-sec" onclick="openScheduleModal()" style="margin-bottom:8px;">📊 График платежей</button>
+      <label style="font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold;">
+        <input type="checkbox" id="showCreditInKP" onchange="renderKP()"> Добавить блок в КП
+      </label>
+    </div>
+  </div>
+</div>
+
+    <span class="hint" style="margin-top: 15px; display:block;">Фото авто (можно выделить до 3 шт):</span>
+    <input type="file" id="vCarImg" accept="image/*" multiple class="hint" title="Выберите от 1 до 3 фото">
+    
+    <div id="mini-gallery" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"></div>
+
+    <h3>Менеджер</h3>
+    <input id="vMgrName" placeholder="Имя Фамилия" oninput="renderKP()">
+    <div class="row">
+      <input id="vMgrPhone" placeholder="Телефон" oninput="formatPhone(this); renderKP()">
+      <input id="vMgrEmail" placeholder="Email" oninput="renderKP()">
+    </div>
+
+    <button onclick="renderKP()">Обновить документ справа</button>
+    <button class="btn-sec" onclick="confirmClear()">Очистить всё</button>
+  </div>
+
+  <div id="tab-mgrs" class="tab-content">
+    <h3>Добавить менеджера</h3>
+    <input id="mName" placeholder="Имя">
+    <input id="mPhone" placeholder="Телефон" oninput="formatPhone(this)">
+    <input id="mEmail" placeholder="Email">
+    <button onclick="saveItem('mgrs')">Сохранить менеджера</button>
+    <h3>База менеджеров</h3>
+    <div id="list-mgrs"></div>
+  </div>
+
+  <div id="tab-saved" class="tab-content">
+    <h3>Сохранить КП как шаблон</h3>
+    <input id="tName" placeholder="Название шаблона">
+    <button class="btn-green" onclick="saveItem('tpls')">Сохранить</button>
+    <h3>Сохраненные шаблоны</h3>
+    <div id="list-tpls"></div>
+    
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+    <h3>Резервное копирование</h3>
+    <span class="hint">Сохраните файл на компьютер, чтобы не потерять настройки</span>
+    <button class="btn-sec" onclick="exportDB()">📥 Скачать базу (Бэкап)</button>
+    <input type="file" id="importDBFile" style="display:none;" accept=".json" onchange="importDB(this)">
+    <button class="btn-sec" onclick="document.getElementById('importDBFile').click()">📤 Загрузить базу</button>
+  </div>
+</aside>
+
+<main class="preview-wrap">
+  <div class="toolbar">
+    <button onclick="downloadPDF()" class="btn-green" id="btn-pdf" style="background: #2563eb;">📄 Идеальный PDF</button>
+    <button onclick="copyTextForMessenger()" class="btn-green" style="background: #10b981;">💬 Текст для клиента</button>
+    <button id="btn-img" onclick="downloadImage()" style="background: #8b5cf6;">🖼️ Картинкой</button>
+  </div>
+
+  <div id="document-container" class="theme-premium">
+    <div class="doc-top-line"></div>
+    <div class="doc-header">
+      <div class="doc-dealer">
+        <div class="doc-logo" id="outLogo"><span>Логотип</span></div>
+        <div>
+          <div style="font-size:18px; font-weight:bold;" id="outDName">Название дилера</div>
+          <div style="font-size:13px; color:#6b7280;" id="outDAddr">Адрес дилера</div>
+          <div style="font-size:13px; color:#6b7280;" id="outDContacts">Телефон</div>
+        </div>
+      </div>
+      <div class="doc-meta">
+        <strong style="color:#1f2937">Коммерческое предложение</strong><br>
+        <span id="outNum">№ —</span><br>
+        <span id="outToday">Дата</span>
+      </div>
+    </div>
+
+    <div class="doc-title">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</div>
+
+    <div class="doc-main">
+      <div class="doc-info">
+        <div class="doc-car-name" id="outCarName">Марка и Модель</div>
+        <div class="doc-package" id="outCarPkg">Комплектация</div>
+        <div style="font-weight:bold; margin-bottom:5px;">Характеристики:</div>
+        <div class="doc-specs" id="outCarSpecs">Параметры не указаны</div>
+        
+        <div style="font-weight:bold; margin-bottom:5px; color: #059669;">Подарки: 🎁</div>
+        <ul class="doc-equip" id="outCarEq"><li>Нет данных</li></ul>
+      </div>
+      <div class="doc-photo">
+        <div class="doc-photo-box" id="outCarImg"><span>Фото авто</span></div>
+      </div>
+    </div>
+
+    <div id="stdEqBlock" style="margin-bottom: 15px; display: none;">
+      <div style="font-weight:bold; margin-bottom:5px; font-size: 13px;">Базовое оснащение:</div>
+      <ul class="doc-equip" id="outCarStdEq"></ul>
+    </div>
+
+    <div id="dealerEqBlock" style="margin-bottom: 15px; display: none; page-break-inside: avoid; break-inside: avoid;">
+      <div style="font-weight:bold; margin-bottom:5px; font-size: 13px; color: #1d4ed8;">Дополнительное оборудование:</div>
+      <ul class="doc-equip" id="outDealerEq" style="background: #eff6ff; padding: 12px 12px 12px 25px; border-radius: 8px; border: 1px solid #bfdbfe; color: #1e3a8a;"></ul>
+    </div>
+
+    <div class="doc-price-box">
+      <div>
+        <div style="font-size:12px; color:#6b7280; margin-bottom:2px;">Базовая цена</div>
+        <div class="doc-price-old" id="outPriceOld">—</div>
+        <div style="font-size:12px; color:#6b7280; margin:10px 0 2px;">Специальная цена</div>
+        <div class="doc-price-new" id="outPriceNew">—</div>
+      </div>
+      <div class="doc-discount" id="outDiscount" style="display:none;">Выгода —</div>
+    </div>
+
+    <!-- ВЫВОД КРЕДИТА В ДОКУМЕНТЕ -->
+    <div id="docCreditBadge" style="background: #dcfce7; color: #166534; padding: 10px 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 15px; display: none; align-items: center; justify-content: space-between; page-break-inside: avoid;">
+      <div style="font-size: 12px; line-height: 1.4;">
+        <b>Комфортный автокредит:</b><br>
+        Взнос: <span id="docCreditDownpay">0 ₽</span> / Срок: <span id="docCreditTerm">0 мес.</span>
+      </div>
+      <div style="font-size: 18px; font-weight: bold;">
+        от <span id="docCreditFinalPay">0 ₽/мес</span>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <div>
+        <strong style="display:block; margin-bottom:5px;">Ваш менеджер:</strong>
+        <span id="outMgrName">Имя менеджера</span><br>
+        <span id="outMgrPhone">Телефон</span><br>
+        <span id="outMgrEmail">Email</span>
+      </div>
+      <div>
+        <strong style="display:block; margin-bottom:5px;">Условия предложения:</strong>
+        <span id="outValid">Срок действия: —</span><br><br>
+        <span style="font-size:11px; color:#9ca3af;">Данное предложение носит информационный характер и не является публичной офертой.</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="dopsModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Оборудование дилера</h2>
+      <button onclick="closeDopsModal()" class="close-btn">&times;</button>
+    </div>
+    
+    <div class="custom-add-box">
+      <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">Добавить свою опцию:</div>
+      <div class="custom-add-grid">
+        <input id="newDopName" placeholder="Название (например: Сетка)">
+        <input type="number" id="newDopPrice" placeholder="Цена (₽)">
+        <button onclick="addCustomDop()" class="btn-green">➕ Добавить</button>
+      </div>
+    </div>
+
+    <div class="dops-list-container" id="modal-dops-list"></div>
+    <button onclick="closeDopsModal()" style="margin-top: 10px; margin-bottom: 0;">Готово</button>
+  </div>
+</div>
+
+
+<!-- МОДАЛКА ГРАФИКА ПЛАТЕЖЕЙ -->
+<div id="scheduleModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:700px;">
+    <div class="modal-header">
+      <h2>📊 График платежей</h2>
+      <button onclick="closeScheduleModal()" class="close-btn">&times;</button>
+    </div>
+    <div id="scheduleSummary" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:15px;"></div>
+    <div style="overflow-y:auto; max-height:55vh; flex-grow:1;" id="scheduleTableWrap">
+      <table id="scheduleTable" style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead>
+          <tr style="position:sticky; top:0; background:rgba(22,22,30,.98); z-index:1;">
+            <th style="padding:8px 6px; text-align:center; border-bottom:2px solid rgba(48,209,88,.3); color:#30d158; font-size:11px;">№</th>
+            <th style="padding:8px 6px; text-align:right; border-bottom:2px solid rgba(48,209,88,.3); color:#30d158; font-size:11px;">Платёж</th>
+            <th style="padding:8px 6px; text-align:right; border-bottom:2px solid rgba(48,209,88,.3); color:#30d158; font-size:11px;">% банку</th>
+            <th style="padding:8px 6px; text-align:right; border-bottom:2px solid rgba(48,209,88,.3); color:#30d158; font-size:11px;">Тело</th>
+            <th style="padding:8px 6px; text-align:right; border-bottom:2px solid rgba(48,209,88,.3); color:#30d158; font-size:11px;">Остаток</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:15px;">
+      <button class="btn-green" onclick="downloadSchedulePDF()" style="margin:0;">📄 Скачать PDF</button>
+      <button class="btn-sec" onclick="copyScheduleText()" style="margin:0;">📋 Копировать текст</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
+// ==========================================
+const $ = id => document.getElementById(id);
+const val = id => { const el = $(id); return el ? el.value.trim() : ''; };
+const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
+const formatRub = v => { let d = String(v).replace(/\D/g, ''); return d ? Number(d).toLocaleString('ru-RU') + " ₽" : "—"; };
+const getNum = v => Number(String(v).replace(/\D/g, '')) || 0;
+
+function formatInputNumber(el) {
+  if (!el) return;
+  let cursor = el.selectionStart; 
+  let oldLen = el.value.length; 
+  let v = el.value.replace(/\D/g, '');
+  el.value = v ? v.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : '';
+  let newLen = el.value.length; 
+  try { el.setSelectionRange(cursor + (newLen - oldLen), cursor + (newLen - oldLen)); } catch(e){}
+}
+
+function showToast(msg, isError = false) {
+  const container = $('toast-container'); if (!container) return;
+  const toast = document.createElement('div'); toast.className = `toast ${isError ? 'error' : ''}`; toast.innerHTML = msg;
+  container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3500);
+}
+
+// ==========================================
+// 2. БРОНЕБОЙНАЯ ЗАГРУЗКА БАЗЫ ДАННЫХ (Защита от сбоя кэша)
+// ==========================================
+let db;
+try {
+  db = JSON.parse(localStorage.getItem('kp_db_v24'));
+  if (!db || typeof db !== 'object') db = {};
+} catch(e) {
+  db = {};
+}
+
+// Принудительно восстанавливаем все массивы, если они сломались
+if (!Array.isArray(db.mgrs)) db.mgrs = [];
+if (!Array.isArray(db.tpls)) db.tpls = [];
+if (!Array.isArray(db.imgCars)) db.imgCars = [];
+if (!Array.isArray(db.customDops)) db.customDops = [];
+if (typeof db.counter !== 'number') db.counter = 1;
+if (typeof db.imgLogo !== 'string') db.imgLogo = '';
+
+const saveDB = () => localStorage.setItem('kp_db_v24', JSON.stringify(db));
+
+// ==========================================
+// 3. БАЗА ТЕКСТОВ И КОМПЛЕКТАЦИЙ
+// ==========================================
+const DIRECT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRrB8hxN1_ufd9SOlyZ_yjHyf6JYqDsMHRBF2iaS53Tg3chIDyUyBOscqmXXwiIp-jacQ2vFqA-PMJ6/pub?output=csv&_nocache=" + Date.now();
+
+const OMODA_C5_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.9 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-92)\nДорожный просвет: 190 мм\nОбъем багажника: 422 л";
+const OMODA_C5_ACTIVE_EQ = "Светодиодная оптика (LED-фары, ДХО, задние фонари) и датчик света\nЛегкосплавные литые диски 17\" и спортивный задний спойлер\nКомбинированная отделка сидений (ткань + искусственная кожа)\nСенсорная мультимедиа 12.3\" с беспроводным Apple CarPlay / Android Auto\nЦифровая приборная панель 8\"\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла, форсунок и электрозеркал\nБесключевой доступ, кнопка запуска и дистанционный запуск двигателя\nКондиционер и круиз-контроль\nКамера заднего вида и задние датчики парковки\nЭлектронный стояночный тормоз (EPB) с функцией AutoHold\nВыбор режимов вождения\nПакет активной безопасности (ABS, ESP, контроль давления в шинах)\n4 подушки безопасности (фронтальные и боковые)";
+const OMODA_C5_STYLE_EQ = "Светодиодная оптика с датчиками света, дождя и автоматическим дальним светом\nЛегкосплавные литые диски 18\" и электрический люк\nОтделка салона эко-кожей, атмосферная подсветка и многослойные (акустические) передние стекла\nОгромный сенсорный дисплей 15.6\" с беспроводным CarPlay / Android Auto + голосовое управление\nЦифровая приборная панель 8.88\", 8 динамиков и беспроводная зарядка для смартфона\nДвухзонный климат-контроль и вентиляция передних сидений\nПолный зимний пакет: подогрев лобового стекла, руля, форсунок, а также передних и задних сидений\nЭлектрорегулировка сидений водителя (в 6 направлениях) и пассажира (в 4 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника\nЭлектроскладывание зеркал и автозатемняющееся салонное зеркало\nСистема камер кругового обзора 360° + передние и задние парктроники\nПолный пакет систем активной безопасности (ADAS): адаптивный круиз-контроль (ACC), автоторможение, контроль слепых зон (BSD), удержание в полосе, ассистент движения в пробках\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const OMODA_C5_DRIVE_EQ = "Светодиодная оптика с датчиками света, дождя и автоматическим переключением дальнего света\nЛегкосплавные литые диски 18\" и спортивный задний спойлер\nПолностью кожаный салон (эко-кожа), атмосферная подсветка и подлокотник для задних пассажиров\nОгромный сенсорный дисплей 15.6\" с беспроводным CarPlay / Android Auto + голосовое управление\nЦифровая приборная панель 8.88\", 6 динамиков и беспроводная зарядка для смартфона\nДвухзонный климат-контроль\nПолный зимний пакет: подогрев лобового стекла, руля, форсунок, а также передних и задних сидений\nЭлектрорегулировка сиденья водителя в 6 направлениях\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника\nЭлектроскладывание зеркал и автозатемняющееся салонное зеркало\nСистема камер кругового обзора 360° + передние и задние парктроники\nПродвинутая безопасность: контроль слепых зон (BSD), предупреждение о столкновении при движении задним ходом (RCTA) и предупреждение при открытии дверей\nСтандартный круиз-контроль\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const OMODA_C7_FWD_SPECS = "Двигатель: 1.6 Турбо (150 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 10.4 сек\nРасход (смешанный): 7.5 л / 100 км (АИ-92)\nДорожный просвет: 182 мм\nОбъем багажника: 639 л\nОбъем бака: 51 л";
+const OMODA_C7_AWD_SPECS = "Двигатель: 1.6 Турбо (150 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Полный\nРазгон 0-100 км/ч: 11.4 сек\nРасход (смешанный): 8.0 л / 100 км (АИ-92)\nДорожный просвет: 175 мм\nОбъем багажника: 639 л\nОбъем бака: 57 л";
+const OMODA_C7_ACTIVE_EQ = "Светодиодная оптика с датчиками света и дождя, динамические поворотники\nЛегкосплавные литые диски 18\" и спортивный задний спойлер\nОтделка салона из практичной искусственной кожи (черная)\nОгромный сенсорный дисплей мультимедиа 15.6\" с поддержкой CarPlay/Android Auto\nЦифровая приборная панель 8.9\" и аудиосистема на 6 динамиков\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла и форсунок\nДвухзонный климат-контроль и классический круиз-контроль\nБесключевой доступ, запуск кнопкой и дистанционный запуск двигателя\nКамера заднего вида и задние датчики парковки\nПакет систем активной безопасности (ABS, ESC, помощь на подъеме/спуске) и 4 подушки безопасности";
+const OMODA_C7_DRIVE_EQ = "Светодиодная оптика с датчиками света и дождя, динамические поворотники\nЛегкосплавные литые диски 18\" и спортивный задний спойлер\nОтделка салона из искусственной кожи (черная)\nОгромная мультимедиа 15.6\" (CarPlay/Android Auto) + голосовое управление\nПремиальная аудиосистема на 8 динамиков и беспроводная зарядка для смартфона\nПолный зимний пакет: подогрев передних и задних сидений, руля, лобового стекла и форсунок\nЭлектрорегулировка сидений водителя (в 6 направлениях) и пассажира (в 4 направлениях)\nДвухзонный климат-контроль и классический круиз-контроль\nБесключевой доступ, дистанционный запуск и электропривод двери багажника\nСистема камер кругового обзора 360° и задние датчики парковки\n6 подушек безопасности (включая боковые шторки) и пакет безопасности (ESC, ABS, помощь на склонах)";
+const OMODA_C7_STYLE_EQ = "Интеллектуальная светодиодная оптика (автодальний свет) и анимированный приветственный свет\nУвеличенные легкосплавные диски 19\" и панорамная крыша с люком\nОтделка салона искусственной кожей и атмосферная подсветка (с анимацией под музыку)\nОгромная мультимедиа 15.6\", телематика Omoda Connect, 8 динамиков и беспроводная зарядка\nДвухзонный климат-контроль, вентиляция передних сидений и полный пакет теплых опций\nЭлектрорегулировка передних сидений (наружные зеркала с памятью настроек)\nБесключевой доступ, дистанционный запуск и электропривод двери багажника\nСистема камер кругового обзора 360°, передние и задние датчики парковки\nПолный комплекс активной безопасности ADAS (адаптивный круиз ACC, автоторможение, контроль слепых зон, удержание в полосе)\nМаксимальная защита: 7 подушек безопасности (включая центральную подушку между передними сиденьями)";
+const JAECOO_J6_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 210 Нм)\nКПП: 6-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 10.0 сек\nРасход (смешанный): 7.5 л / 100 км (АИ-92)\nДорожный просвет: 176 мм\nГабариты: 4509 × 1860 × 1650 мм\nОбъем багажника: 480 л\nТопливный бак: 51 л";
+const JAECOO_J6_ACTIVE_EQ = "Светодиодная оптика (LED фары, ДХО, задние фонари) с датчиками света и дождя\nАлюминиевые литые диски 17\"\nОтделка салона в практичном черном цвете\nЦифровая приборная панель 8\" и сенсорная мультимедиа 9\" с поддержкой CarPlay/Android Auto\nБесключевой доступ, кнопка запуска и дистанционный запуск двигателя (с прогревом салона)\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла и форсунок омывателя\nБазовый круиз-контроль и выбор режимов вождения\nЗадние датчики парковки\nЭлектрический стояночный тормоз с функцией AutoHold\n4 подушки безопасности (фронтальные и боковые) + пакет активной безопасности (ABS, ESC)";
+const JAECOO_J6_COMFORT_EQ = "Светодиодная оптика (спереди и сзади) + передние противотуманные фары и датчики света/дождя\nАлюминиевые литые диски 18\"\nОтделка сидений из премиальной искусственной кожи (черная)\nОгромный сенсорный дисплей 13.2\" (с CarPlay/Android Auto) и 6 динамиков\nЦифровая приборная панель 8\"\nДвухзонный климат-контроль\nПолный зимний пакет: подогрев передних и задних сидений, руля, лобового стекла и форсунок\nВодительское сиденье с электрорегулировкой (в 6 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника (без помощи рук)\nКамера заднего вида с динамической разметкой и задние парктроники\nКруиз-контроль и выбор режимов вождения\n4 подушки безопасности и электронные системы курсовой устойчивости (ESC, ABS)";
+const JAECOO_J6_PRESTIGE_EQ = "Светодиодная оптика с автоматическим переключением дальнего света (IHC)\nАлюминиевые литые диски 18\" и панорамная крыша\nОтделка салона из искусственной кожи и многослойные (акустические) передние стекла\nОгромная мультимедиа 13.2\", 8 динамиков и беспроводная зарядка для смартфона\nДвухзонный климат-контроль и вентиляция передних сидений\nПолный зимний пакет: подогрев всех сидений, руля, лобового стекла и форсунок\nЭлектрорегулировка сидений водителя (6 направлений) и пассажира (4 направления)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника (свободные руки)\nСистема камер кругового обзора 540° + передние и задние парктроники\nПолный комплекс активной безопасности ADAS (адаптивный круиз ACC, автоторможение, контроль слепых зон, удержание в полосе)\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const JAECOO_J7_FWD_SPECS = "Двигатель: 1.6 Турбо (150 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Передний\nРазгон 0-100 км/ч: 9.7 сек\nРасход (смешанный): 7.1 л / 100 км (АИ-92)\nДорожный просвет: 196 мм\nГабариты: 4600 × 1898 × 1680 мм\nОбъем багажника: 500 л\nТопливный бак: 51 л";
+const JAECOO_J7_AWD_SPECS = "Двигатель: 1.6 Турбо (186 л.с., 275 Нм)\nКПП: 7-ступенчатый робот\nПривод: Полный\nРазгон 0-100 км/ч: 9.0 сек\nРасход (смешанный): 8.1 л / 100 км (АИ-92)\nДорожный просвет: 186 мм\nГабариты: 4600 × 1898 × 1680 мм\nОбъем багажника: 500 л\nТопливный бак: 57 л";
+const JAECOO_J7_COMFORT_EQ = "Светодиодная оптика (фары, ДХО, фонари) с датчиками света и дождя\nЛегкосплавные алюминиевые диски 18\"\nОтделка салона из искусственной кожи (черная) и акустическое лобовое стекло\nЦифровая приборная панель 10.25\" и большой сенсорный дисплей 13.2\" (CarPlay/Android Auto)\nБеспроводная зарядка для смартфона и аудиосистема на 6 динамиков\nДвухзонный климат-контроль и стандартный круиз-контроль\n«Теплые опции»: подогрев передних сидений, руля, лобового стекла и форсунок\nВодительское сиденье с электрорегулировкой (в 6 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника (без помощи рук)\nСистема камер кругового обзора 540° + передние и задние датчики парковки\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const JAECOO_J7_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (с автопереключением дальнего света IHC)\nЛегкосплавные алюминиевые диски 18\" и панорамный люк\nОтделка салона из искусственной кожи (черная) и акустическое лобовое стекло\nЦифровая приборная панель 10.25\" и большой сенсорный дисплей 13.2\" (CarPlay/Android Auto)\nБеспроводная зарядка для смартфона и аудиосистема на 8 динамиков\nДвухзонный климат-контроль, вентиляция передних сидений и подогрев сидений 2-го ряда\nПолный зимний пакет: подогрев всех сидений, руля, лобового стекла и форсунок\nЭлектрорегулировка сидений водителя (в 6 направлениях) и пассажира (в 4 направлениях)\nБесключевой доступ, дистанционный запуск двигателя и электропривод двери багажника\nСистема камер кругового обзора 540° + передние и задние датчики парковки\nИнтеллектуальный адаптивный круиз-контроль (ACC) и полный пакет умных помощников (ADAS)\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const JAECOO_J8_SPECS = "Двигатель: 2.0 Турбо (249 л.с., 385 Нм)\nКПП: 7-ступенчатый робот\nПривод: Полный\nРазгон 0-100 км/ч: 8.5 сек\nРасход (смешанный): 8.1 л / 100 км (АИ-95)\nДорожный просвет: 210 мм\nГабариты: 4820 × 1930 × 1710 мм\nОбъем багажника: 717 л (до 2021 л)\nТопливный бак: 65 л";
+const JAECOO_J8_COMFORT_EQ = "Полностью светодиодная оптика с автодальним светом и динамическими поворотниками\nАлюминиевые литые диски 20\" и панорамная крыша с люком\nОтделка салона искусственной кожей, акустическое лобовое и многослойные передние стекла\nИзогнутый сдвоенный экран (панель приборов 12\" + мультимедиа 12\") и проекционный дисплей (HUD)\nАудиосистема на 12 динамиков и беспроводная зарядка\nДвухзонный климат-контроль и вентиляция передних сидений\nЭлектрорегулировка передних сидений (водительское с памятью)\nПолный «Теплый пакет» (подогрев лобового, руля, всех сидений, форсунок)\nАдаптивная подвеска CDC (с регулируемой жесткостью)\nСистема камер кругового обзора 540° + передние и задние парктроники\nИнтеллектуальный адаптивный круиз-контроль (ACC) и полный пакет умных помощников (ADAS)\n6 подушек безопасности (включая шторки безопасности)";
+const JAECOO_J8_PRESTIGE_EQ = "Алюминиевые литые диски 20\" и панорамная крыша с люком\nПремиальная отделка салона кожей «Наппа», черный бархатный потолок и атмосферная подсветка\nПередние сиденья с функцией массажа и оттоманка для переднего пассажира\nАкустика премиум-класса SONY (14 динамиков) и встроенная ароматерапия салона\nИзогнутый экран (два дисплея по 12\"), проекционный дисплей (HUD) и встроенный видеорегистратор\nДвухзонный климат-контроль, вентиляция и подогрев передних и задних сидений\nЭлектропривод рулевой колонки и сидений (с памятью настроек для водителя)\nАдаптивная подвеска CDC (с регулируемой жесткостью амортизаторов)\nСистема камер 540°, передние и задние парктроники\nПолный комплекс активной безопасности ADAS (адаптивный круиз, автоторможение, контроль слепых зон)\nМаксимальная защита: 10 подушек безопасности (включая коленную, центральную и боковые для 2-го ряда)";
+const JAECOO_J8_PRESTIGE_PLUS_EQ = "Продвинутый полный привод Torque-Vectoring (управление вектором тяги с двумя муфтами на задней оси)\nАлюминиевые литые диски 20\" и панорамная крыша с люком\nПремиальная отделка салона кожей «Наппа», черный бархатный потолок и массаж передних сидений\nОттоманка для переднего пассажира и встроенная ароматерапия салона\nАкустика премиум-класса SONY (14 динамиков)\nИзогнутый дисплей (два экрана по 12\"), проекция (HUD) и встроенный видеорегистратор\nЭлектрорегулировки сидений и руля с памятью, вентиляция и подогрев всех сидений\nАдаптивная подвеска CDC (регулируемая жесткость амортизаторов)\nСистема камер 540°, передние/задние парктроники и полный автопилот (ADAS)\nМаксимальная защита: 10 подушек безопасности (включая коленную, центральную и боковые для 2-го ряда)";
+
+const BELGEE_X50_PLUS_SPECS = "Двигатель: 1.5 Турбо (147 л.с., 270 Нм)\nКПП: 7-ступенчатый робот (7DCT)\nПривод: Передний\nРасход (смешанный): 6.5 л / 100 км (АИ-95)\nДорожный просвет: 182 мм\nГабариты: 4380 × 1810 × 1615 мм\nОбъем багажника: 330 л\nТопливный бак: 45 л";
+const BELGEE_X50_PLUS_ACTIVE_EQ = "Светодиодная оптика (LED фары, ДХО и комбинированные задние фонари)\nЛегкосплавные колесные диски 17\"\nСпортивный экстерьер (рейлинги, задний спойлер, отделка зеркал «под карбон», имитация выхлопа)\nОтделка салона из черной эко-кожи с контрастной красной строчкой\nЦифровая приборная панель 8.8\" и сенсорная мультимедиа 8\" (с поддержкой смартфона)\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя стеклоочистителей, форсунок и электрозеркал\nКлимат-контроль и круиз-контроль\nВыбор из 4-х режимов вождения (Спорт, Комфорт, Эко, Адаптивный)\nКамера заднего вида и задние датчики парковки\nЭлектронный стояночный тормоз (EPB) с функцией AutoHold\nПакет активной безопасности (ABS, ESP, помощь на подъеме и спуске, контроль давления в шинах)\n4 подушки безопасности (фронтальные и боковые)";
+const BELGEE_X50_PLUS_STYLE_EQ = "Светодиодная оптика (LED фары, ДХО и задние комбинированные фонари)\nЛегкосплавные колесные диски 18\"\nСпортивный экстерьер (рейлинги, задний спойлер, отделка зеркал «под карбон», имитация выхлопа)\nОтделка салона из черной эко-кожи с контрастной красной строчкой\nЦифровая приборная панель 8.8\" и сенсорная мультимедиа 14.6\" (с интеграцией смартфона)\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя стеклоочистителей, форсунок и электрозеркал\nБесключевой доступ и кнопка запуска двигателя\nКлимат-контроль и базовый круиз-контроль\nВыбор из 4-х режимов вождения (Спорт, Комфорт, Эко, Адаптивный)\nКамера заднего вида и задние датчики парковки\nЭлектронный ручник (EPB) с функцией AutoHold\nПакет активной безопасности (ABS, ESP, помощь на подъеме и спуске, контроль давления в шинах)\n4 подушки безопасности (фронтальные и боковые)";
+const BELGEE_X50_PLUS_ONYX_EQ = "Светодиодная оптика (LED фары, ДХО и задние фонари) + автодальний свет\nЛегкосплавные колесные диски 18\" с красными тормозными суппортами\nПанорамная крыша с электрическим люком\nЭксклюзивный экстерьер (спортивный спойлер \"S\", отделка зеркал «под карбон», имитация выхлопа)\nПремиальная отделка салона: эко-кожа с замшевыми вставками (черно-красная) и атмосферная подсветка\nЦифровая приборная панель 8.8\" и огромная мультимедиа 14.6\"\nБеспроводная зарядка для мобильных устройств\n«Теплые опции»: подогрев передних и задних сидений, руля, лобового стекла, форсунок и зеркал\nЭлектропривод двери багажника\nБесключевой доступ и кнопка запуска двигателя\nКлимат-контроль и электрорегулировка сиденья водителя\nСистема камер кругового обзора 360° и задние парктроники\nИнтеллектуальный круиз-контроль (ICA)\nПолный комплекс безопасности ADAS (удержание в полосе, контроль слепых зон, автоторможение, чтение знаков)\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const BELGEE_X50_PLUS_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (с управлением дальним светом) и датчик дождя\nЛегкосплавные диски 18\" и панорамная крыша с люком\nСпортивный экстерьер (4 патрубка выхлопа, спойлер, отделка зеркал под «карбон»)\nПремиальная отделка салона: эко-кожа (черно-красная) и многоцветная атмосферная подсветка\nЦифровая приборная панель 8.8\" и огромная мультимедиа 14.6\"\nБеспроводная зарядка для мобильных устройств\n«Теплые опции»: подогрев передних и задних сидений, руля, лобового стекла и форсунок\nИнтеллектуальный круиз-ассистент (ICA) и однозонный климат-контроль\nСиденье водителя с электрорегулировкой (в 6 направлениях)\nБесключевой доступ, запуск кнопкой и электропривод двери багажника\nСистема камер кругового обзора 360° и задние датчики парковки\nПолный комплекс активной безопасности ADAS (автоторможение, контроль слепых зон, удержание в полосе, чтение знаков)\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const BELGEE_S50_MT_SPECS = "Двигатель: 1.5 л (122 л.с., 152 Нм)\nКПП: 5-ступенчатая механика\nПривод: Передний\nРазгон 0-100 км/ч: 12.9 сек\nРасход (смешанный): 5.8 л / 100 км (АИ-95)\nДорожный просвет: 151 мм\nГабариты: 4638 × 1822 × 1460 мм\nОбъем багажника: 500 л\nТопливный бак: 50 л";
+const BELGEE_S50_AT_SPECS = "Двигатель: 1.5 л (122 л.с., 152 Нм)\nКПП: 6-ступенчатый автомат\nПривод: Передний\nРазгон 0-100 км/ч: 12.6 сек\nРасход (смешанный): 6.4 л / 100 км (АИ-95)\nДорожный просвет: 151 мм\nГабариты: 4638 × 1822 × 1460 мм\nОбъем багажника: 500 л\nТопливный бак: 50 л";
+const BELGEE_S50_ACTIVE_EQ = "15-дюймовые стальные диски с колпаками и галогеновые фары (LED-ДХО и LED-фонари сзади)\nБесключевой доступ, кнопка Start/Stop и дистанционный запуск двигателя с ключа\nМультимедийная система с сенсорным экраном 8 дюймов, 6 динамиков и функция дублирования экрана смартфона\nПолноценный климат-контроль, подлокотники спереди и сзади, все 4 стеклоподъемника с авторежимом\nПодогрев передних сидений, боковых зеркал и форсунок омывателя\nЗадние парктроники и электромеханический ручник с функцией AutoHold\n2 фронтальные подушки безопасности, система курсовой устойчивости (ESC)\nПомощь при старте в гору (HAC) и датчики давления в шинах";
+const BELGEE_S50_STYLE_EQ = "Полностью светодиодная оптика (LED-фары, ДХО и задние фонари) с датчиком света\nЛегкосплавные литые диски 16\" (отличный баланс мягкости хода и внешнего вида)\nПрактичный тканевый салон с подлокотниками спереди и сзади\nСенсорная мультимедийная система 8\" (Bluetooth, дублирование экрана смартфона) и 6 динамиков\nТеплые опции: подогрев передних сидений, руля (с кожаной отделкой), зоны покоя дворников, форсунок и электрозеркал\nКлимат-контроль и классический круиз-контроль\nБесключевой доступ, кнопка старт/стоп и дистанционный запуск двигателя с ключа\nКамера заднего вида + задние парктроники\nЭлектромеханический ручник (EPB) с удобной функцией AutoHold\n2 фронтальные подушки, система курсовой устойчивости (ESC), помощь при старте в гору (HAC) и датчики давления в шинах (TPMS)";
+const BELGEE_S50_PRESTIGE_EQ = "Увеличенные 17-дюймовые легкосплавные диски и электрический люк с шторкой на крыше\nПолностью светодиодная оптика (спереди и сзади) с датчиком света\nОтделка сидений и элементов дверей эко-кожей + светодиодная подсветка для пассажиров второго ряда\nПолностью цифровая приборная панель и увеличенный сенсорный дисплей на 12.3 дюйма с Apple CarPlay\nСиденье водителя с электроприводом и наружные зеркала с электроскладыванием\nФункция бесконтактного открывания багажника\nКамера заднего вида, парктроники, система стабилизации и AutoHold\nКлимат-контроль, бесключевой доступ, дистанционный запуск двигателя, круиз-контроль\nПодогрев руля, передних сидений, зоны покоя дворников и форсунок\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const BELGEE_X70_2WD_SPECS = "Двигатель: 1.5 Турбо (150 л.с., 255 Нм)\nКПП: 6-ступенчатый автомат (6АКП)\nПривод: Передний\nРазгон 0-100 км/ч: 11.0 сек\nРасход (смешанный): 7.4 л / 100 км (АИ-95)\nДорожный просвет: 171 мм\nГабариты: 4544 × 1831 × 1713 мм\nОбъем багажника: 378 л\nТопливный бак: 58 л";
+const BELGEE_X70_4WD_SPECS = "Двигатель: 1.5 Турбо + Мягкий гибрид 48V (150 л.с., 300 Нм)\nКПП: 7-ступенчатый робот (7DCT)\nПривод: Полный\nРазгон 0-100 км/ч: 12.3 сек\nРасход (смешанный): 7.3 л / 100 км (АИ-95)\nДорожный просвет: 171 мм\nГабариты: 4544 × 1831 × 1713 мм\nОбъем багажника: 378 л\nТопливный бак: 58 л";
+const BELGEE_X70_ACTIVE_EQ = "Галогеновые фары ближнего/дальнего света с LED-ДХО и задние светодиодные фонари\nЛегкосплавные диски 17\" и рейлинги на крыше\nОтделка салона экокожей со вставками под «карбон»\nЦифровая приборная панель и мультимедиа 12.3\" (6 динамиков, дублирование смартфона)\nДвухзонный климат-контроль и базовый круиз-контроль\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя стеклоочистителей и форсунок\nКамера заднего вида и задние датчики парковки\nБесключевой запуск (кнопка) и электромеханический ручник с AutoHold\nПакет активной безопасности (ESC, ABS, помощь на подъеме/спуске, контроль усталости)\n4 подушки безопасности (фронтальные и боковые)";
+const BELGEE_X70_STYLE_EQ = "Светодиодная оптика (LED фары, ДХО, фонари) с датчиками света и дождя\nЛегкосплавные диски 17\" и рейлинги на крыше\nОтделка салона экокожей со вставками под «карбон»\nЦифровая приборная панель и мультимедиа 12.3\" с дублированием смартфона\nДвухзонный климат-контроль и базовый круиз-контроль\n«Теплые опции»: подогрев передних и задних сидений, руля, зоны покоя дворников и форсунок\nСистема бесключевого доступа и кнопка запуска двигателя\nКамера заднего вида + передние и задние датчики парковки\nСалонное зеркало с автозатемнением\nЭлектромеханический ручник (EPB) с функцией AutoHold\n6 подушек безопасности (фронтальные, боковые и шторки)";
+const BELGEE_X70_PRESTIGE_EQ = "Интеллектуальная светодиодная оптика (автодальний свет, динамические поворотники)\nЛегкосплавные диски 18\" и рейлинги на крыше\nОтделка салона экокожей, атмосферная подсветка интерьера\nЦифровая приборная панель и мультимедиа 12.3\" + беспроводная зарядка и 8 динамиков\nДвухзонный климат-контроль и интеллектуальный круиз-контроль (ICC)\n«Теплые опции»: подогрев всех сидений, руля, зоны покоя дворников и форсунок\nСиденье водителя с электроприводом\nБесключевой доступ, кнопка запуска и электропривод двери багажника\nЭлектроскладывание зеркал и салонное зеркало с автозатемнением\nСистема камер кругового обзора 360° + передние и задние парктроники\nКомплекс умных ассистентов (ADAS): автоторможение, удержание в полосе, чтение знаков\n6 подушек безопасности (фронтальные, боковые и шторки)";
+
+const BASE_CATALOG = {
+  "Omoda": {
+    "C5": { "Active": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Drive": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_DRIVE_EQ, priceOld: "", priceNew: "" }, "Style": { specs: OMODA_C5_SPECS, stdEq: OMODA_C5_STYLE_EQ, priceOld: "", priceNew: "" } },
+    "C7": { "Актив (Передний привод)": { specs: OMODA_C7_FWD_SPECS, stdEq: OMODA_C7_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Драйв (Передний привод)": { specs: OMODA_C7_FWD_SPECS, stdEq: OMODA_C7_DRIVE_EQ, priceOld: "", priceNew: "" }, "Актив (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Драйв (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_DRIVE_EQ, priceOld: "", priceNew: "" }, "Стиль (Полный привод)": { specs: OMODA_C7_AWD_SPECS, stdEq: OMODA_C7_STYLE_EQ, priceOld: "", priceNew: "" } }
+  },
+  "Jaecoo": {
+    "J6": { "Актив": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Комфорт": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: JAECOO_J6_SPECS, stdEq: JAECOO_J6_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "J7": { "Комфорт (Передний привод)": { specs: JAECOO_J7_FWD_SPECS, stdEq: JAECOO_J7_COMFORT_EQ, priceOld: "", priceNew: "" }, "Комфорт (Полный привод)": { specs: JAECOO_J7_AWD_SPECS, stdEq: JAECOO_J7_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж (Передний привод)": { specs: JAECOO_J7_FWD_SPECS, stdEq: JAECOO_J7_PRESTIGE_EQ, priceOld: "", priceNew: "" }, "Престиж (Полный привод)": { specs: JAECOO_J7_AWD_SPECS, stdEq: JAECOO_J7_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "J8": { "Комфорт": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_COMFORT_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_PRESTIGE_EQ, priceOld: "", priceNew: "" }, "Престиж+": { specs: JAECOO_J8_SPECS, stdEq: JAECOO_J8_PRESTIGE_PLUS_EQ, priceOld: "", priceNew: "" } }
+  },
+  "Belgee": {
+    "S50": { "Актив (Механика)": { specs: BELGEE_S50_MT_SPECS, stdEq: BELGEE_S50_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Актив (Автомат)": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_S50_AT_SPECS, stdEq: BELGEE_S50_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "X50+": { "Актив": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_STYLE_EQ, priceOld: "", priceNew: "" }, "Оникс": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_ONYX_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X50_PLUS_SPECS, stdEq: BELGEE_X50_PLUS_PRESTIGE_EQ, priceOld: "", priceNew: "" } },
+    "X70": { "Актив": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_ACTIVE_EQ, priceOld: "", priceNew: "" }, "Стайл (2WD)": { specs: BELGEE_X70_2WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Стайл (4WD)": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_STYLE_EQ, priceOld: "", priceNew: "" }, "Престиж": { specs: BELGEE_X70_4WD_SPECS, stdEq: BELGEE_X70_PRESTIGE_EQ, priceOld: "", priceNew: "" } }
+  }
+};
+
+let CATALOG = JSON.parse(JSON.stringify(BASE_CATALOG));
+let currentCatalogSupport = ""; 
+
+function checkMobile() { if (window.innerWidth <= 900) document.body.classList.add('mobile-view'); else document.body.classList.remove('mobile-view'); }
+window.addEventListener('resize', checkMobile); checkMobile();
+
+const DEALER_SETTINGS = { logo: "logo.jpg.jpg", name: "Максимум", address: "Санкт-Петербург, Рыбинская д.1, лит. 3", phone: "+7 (812) 416-96-95" };
+const AUTO_IMAGES = { "omodac5": "omodac5.webp", "omodac7": "omodac7.webp", "jaecooj6": "jaecooj6.webp", "jaecooj7": "jaecooj7.webp", "jaecooj8": "jaecooj8.webp", "belgees50": "belgees50.webp", "belgeex50+": "belgeex50.webp", "belgeex50plus": "belgeex50.webp", "belgeex70": "belgeex70.webp" };
+
+const DEALER_DOPS_BASE = [
+  { id: 'bdop1', name: 'Пакет "Оклейка капота (защитной пленкой)"', price: 43350 }, { id: 'bdop2', name: 'Пакет "Оклейка под ручками дверей"', price: 8390 },
+  { id: 'bdop3', name: 'Пакет "Оклейка полоса на капот"', price: 24450 }, { id: 'bdop4', name: 'Пакет "Оклейка полоса на крышу"', price: 18900 },
+  { id: 'bdop5', name: 'Пакет "Оклейка порогов 4 шт"', price: 12780 }, { id: 'bdop6', name: 'Пакет "Оклейка фар (защитной пленкой)"', price: 15890 },
+  { id: 'bdop7', name: 'Пакет "Защитное керамическое покрытие (1 слой)"', price: 78600 }, { id: 'bdop8', name: 'Пакет "Тонировка легкового авто (5% / 15%)"', price: 19240 },
+  { id: 'bdop9', name: 'Пакет "Шумоизоляция дверей I"', price: 30260 }, { id: 'bdop10', name: 'Ковры 3D в салон (полиуретан)', price: 3554 },
+  { id: 'bdop11', name: 'Ковер в багажник с защитой ТЭП', price: 3458 }, { id: 'bdop12', name: 'Пакет "Защита двигателя"', price: 12623 },
+  { id: 'bdop13', name: 'Пакет "Сетка защитная в бампер"', price: 9500 }, { id: 'bdop14', name: 'Подкрылок с шумоизоляцией', price: 29089 },
+  { id: 'bdop15', name: 'Охранный комплекс с автозапуском', price: 71428 }
+];
+
+// ==========================================
+// ОСНОВНЫЕ ФУНКЦИИ ИНТЕРФЕЙСА
+// ==========================================
+
+function compressImage(file, callback) {
+  const reader = new FileReader(); reader.readAsDataURL(file);
+  reader.onload = e => {
+    const img = new Image(); img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas'); const MAX_WIDTH = 1200;
+      let width = img.width; let height = img.height;
+      if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+      canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+      callback(canvas.toDataURL('image/jpeg', 0.8));
+    };
+  };
+}
+
+function exportDB() {
+  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+  let link = document.createElement('a'); link.setAttribute("href", dataStr); link.setAttribute("download", "kp_backup.json");
+  document.body.appendChild(link); link.click(); link.remove(); showToast("✅ Резервная копия сохранена!");
+}
+
+function importDB(input) {
+  if (!input.files[0]) return; let reader = new FileReader();
+  reader.onload = e => {
+    try { let newDB = JSON.parse(e.target.result); if(newDB && newDB.mgrs) { db = newDB; saveDB(); location.reload(); } else { showToast("❌ Неверный формат файла!", true); } } 
+    catch(err) { showToast("❌ Ошибка чтения файла!", true); }
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function copyTextForMessenger() {
+  let car = val('vCarName') || 'Автомобиль'; let pkg = val('vCarPkg') ? `(${val('vCarPkg')})` : '';
+  let price = $('outPriceNew') ? $('outPriceNew').textContent : ''; let mgr = val('vMgrName') || 'Менеджер'; let phone = val('vMgrPhone') || '';
+  let text = `Здравствуйте! Отправляю вам Коммерческое предложение.\n\n🚗 Автомобиль: ${car} ${pkg}\n💰 Специальная цена: ${price}\n\nС уважением, ${mgr} ${phone}`;
+  navigator.clipboard.writeText(text).then(() => showToast('💬 Текст скопирован! Вставьте в WhatsApp.'));
+}
+
+function toggleCalc(contentId, iconId) {
+  const content = $(contentId); const icon = $(iconId);
+  if (!content || !icon) return;
+  if (content.style.display === 'none' || content.style.display === '') { content.style.display = 'block'; icon.textContent = '▼'; } 
+  else { content.style.display = 'none'; icon.textContent = '▶'; }
+}
+
+function calculateMargin() {
+  let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
+  if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
+  
+  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
+  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
+  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
+  
+  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
+  if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
+  if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
+}
+
+function calculateOjMargin() {
+  let factPaid = getNum(val('ojFactPaid')); let basePrice = getNum(val('ojBasePrice'));
+  let discountInput = val('ojDiscount').replace(',', '.'); let discount = parseFloat(discountInput) || 0; 
+  if (!factPaid && !basePrice) { if($('outOjPremium')) $('outOjPremium').innerHTML = '0 ₽'; return; }
+  let preCalc = basePrice * (1 - (discount / 100)); let premium = Math.round(factPaid - preCalc);
+  let color = premium < 0 ? '#dc2626' : '#166534';
+  if ($('outOjPremium')) $('outOjPremium').innerHTML = `<span style="color:${color}">${premium.toLocaleString('ru-RU')} ₽</span>`;
+}
+
+function toggleTISupport() {
+  const cb = $('useTISupport'); if (!cb) return;
+  if (cb.checked) {
+    setVal('calcSupport', currentCatalogSupport);
+    if (currentCatalogSupport) formatInputNumber($('calcSupport'));
+  } else { setVal('calcSupport', ''); }
+  calculateMargin();
+}
+
+function openDopsModal() { renderDopsUI(); const m = $('dopsModal'); if(m) m.classList.add('active'); }
+function closeDopsModal() { const m = $('dopsModal'); if(m) m.classList.remove('active'); renderKP(); }
+
+function addCustomDop() {
+  const name = val('newDopName'); const price = getNum(val('newDopPrice'));
+  if (!name) return showToast('❌ Введите название опции', true);
+  const newId = 'cdop_' + Date.now(); 
+  db.customDops.push({ id: newId, name: name, price: price }); saveDB(); 
+  setVal('newDopName', ''); setVal('newDopPrice', '');
+  renderDopsUI(); setTimeout(() => { let cb = $(newId); if(cb) { cb.checked = true; renderKP(); } }, 50);
+}
+
+function removeCustomDop(id) { 
+  if (confirm('Удалить эту опцию навсегда?')) { 
+    db.customDops = db.customDops.filter(d => d.id !== id); saveDB(); renderDopsUI(); renderKP(); 
+  } 
+}
+
+function renderDopsUI() {
+  const list = $('modal-dops-list'); if (!list) return;
+  let tempState = {}; 
+  document.querySelectorAll('.dop-check').forEach(cb => { 
+    let prInput = $(cb.id + '_price');
+    tempState[cb.id] = { checked: cb.checked, price: prInput ? prInput.value : 0 }; 
+  });
+
+  const validCustomDops = (db.customDops || []).filter(d => d && d.id);
+  const allDops = [...validCustomDops, ...DEALER_DOPS_BASE];
+  
+  list.innerHTML = allDops.map(d => {
+    const isCustom = d.id.startsWith('cdop_');
+    return `<div class="dop-row dop-item"><label class="dop-label"><input type="checkbox" class="dop-check" id="${d.id}" data-name='${d.name}' onchange="renderKP()"><span style="${isCustom ? 'color: #1d4ed8; font-weight: bold;' : ''}">${d.name}</span></label><div style="display:flex; align-items:center;"><input type="number" class="dop-price-input dop-price" id="${d.id}_price" value="${d.price}" oninput="renderKP()">${isCustom ? `<button class="del-dop-btn" onclick="removeCustomDop('${d.id}')" title="Удалить">×</button>` : '<div style="width:36px"></div>'}</div></div>`;
+  }).join('');
+  
+  document.querySelectorAll('.dop-check').forEach(cb => { 
+    if (tempState[cb.id]) { 
+      cb.checked = tempState[cb.id].checked; 
+      let pr = $(cb.id + '_price'); if (pr) pr.value = tempState[cb.id].price; 
+    } 
+  });
+}
+
+function makeClean(str) { return (str || "").toLowerCase().replace(/[хХ]/g, 'x').replace(/\s+/g, '').replace(/plus/g, '+'); }
+
+function loadCatalogFromGoogle() {
+  const loader = $('catalog-loader'); if (!loader) return;
+  let isLoaded = false;
+
+  const timeoutId = setTimeout(() => {
+    if (!isLoaded) {
+      isLoaded = true;
+      loader.innerHTML = '⚠️ Цены не загрузились (сеть). Работает базовая версия.';
+      loader.style.color = '#d97706';
+    }
+  }, 4000);
+
+  fetch(DIRECT_URL)
+    .then(response => { if (!response.ok) throw new Error('Net Error'); return response.text(); })
+    .then(csvText => {
+      if (isLoaded) return;
+      isLoaded = true; clearTimeout(timeoutId);
+
+      // Защита от страниц-заглушек провайдера Wi-Fi
+      if (csvText.trim().startsWith('<')) {
+          loader.innerHTML = '⚠️ Сеть блокирует таблицу (HTML). Работает база.';
+          loader.style.color = '#d97706';
+          return;
+      }
+
+      if (typeof Papa === 'undefined') {
+          loader.innerHTML = '⚠️ Ошибка загрузки парсера. Работает база.';
+          loader.style.color = '#dc2626';
+          return;
+      }
+
+      Papa.parse(csvText, {
+        header: true, skipEmptyLines: true, transformHeader: function(h) { return h ? h.trim() : ""; }, 
+        complete: function(results) {
+          try {
+            results.data.forEach(row => {
+              let nr = {};
+              for (let k in row) {
+                let cleanK = k.replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-zа-яё0-9]/gi, '');
+                nr[cleanK] = row[k];
+              }
+
+              let bRaw = (nr['brand'] || nr['бренд'] || nr['марка'] || "").trim();
+              let mRaw = (nr['model'] || nr['модель'] || "").trim();
+              let tRaw = (nr['trim'] || nr['комплектация'] || "").trim();
+              
+              if (!bRaw || !mRaw || !tRaw) return;
+
+              let bClean = makeClean(bRaw); let mClean = makeClean(mRaw); let tClean = makeClean(tRaw);
+
+              let bKey = Object.keys(CATALOG).find(k => makeClean(k) === bClean) || bRaw;
+              if (!CATALOG[bKey]) CATALOG[bKey] = {};
+
+              let mKey = Object.keys(CATALOG[bKey]).find(k => makeClean(k) === mClean) || mRaw;
+              if (!CATALOG[bKey][mKey]) CATALOG[bKey][mKey] = {};
+
+              let tKey = Object.keys(CATALOG[bKey][mKey]).find(k => makeClean(k) === tClean) || tRaw;
+              let existing = CATALOG[bKey][mKey][tKey] || {};
+
+              function extractNumber(val) {
+                if(!val) return "";
+                let d = String(val).replace(/\D/g, '');
+                return d === "0" ? "" : d;
+              }
+
+              let pOld = extractNumber(nr['priceold'] || nr['базоваяцена'] || nr['стараяцена'] || nr['цена']);
+              let pNew = extractNumber(nr['pricenew'] || nr['спеццена'] || nr['специальнаяцена'] || nr['новаяцена']);
+              let cCar = extractNumber(nr['costcar'] || nr['себестоимость'] || nr['себесавто']);
+              let supp = extractNumber(nr['support'] || nr['поддержка'] || nr['трейдин']);
+              let mcp  = extractNumber(nr['basemcp'] || nr['мцп'] || nr['базоваямцп']);
+
+              CATALOG[bKey][mKey][tKey] = {
+                priceOld: pOld || existing.priceOld || "",
+                priceNew: pNew || existing.priceNew || "",
+                costCar: cCar || existing.costCar || "",
+                support: supp || existing.support || "",
+                baseMcp: mcp || existing.baseMcp || "",
+                specs: nr['specs'] || nr['характеристики'] || existing.specs || "", 
+                stdEq: nr['stdeq'] || nr['оснащение'] || nr['базовоеоснащение'] || existing.stdEq || ""
+              };
+            });
+
+            loader.style.display = 'none';
+            
+            let curBrand = val('catBrand'); let curModel = val('catModel'); let curTrim = val('catTrim');
+            populateBrandList();
+            if (curBrand) { setVal('catBrand', curBrand); updateModels(); }
+            if (curModel) { setVal('catModel', curModel); updateTrims(); }
+            if (curTrim)  { setVal('catTrim', curTrim); applyCatalog(); }
+
+            showToast('✅ Базовые и Спец цены успешно обновлены!');
+          } catch (e) {
+             console.error("CSV Parse Error", e);
+          }
+        }
+      });
+    })
+    .catch(err => {
+      if (isLoaded) return;
+      isLoaded = true; clearTimeout(timeoutId);
+      loader.innerHTML = '❌ Цены заблокированы. Работает база.';
+      loader.style.color = '#dc2626';
+    });
+}
+
+function populateBrandList() {
+  const selBrand = $('catBrand'); if (!selBrand) return;
+  selBrand.innerHTML = '<option value="">-- Выберите бренд --</option>';
+  Object.keys(CATALOG).forEach(brand => selBrand.options.add(new Option(brand, brand)));
+}
+
+function updateModels() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selBrand || !selModel || !selTrim) return;
+  selModel.innerHTML = '<option value="">-- Выберите модель --</option>'; selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>'; selTrim.disabled = true;
+  if (selBrand.value && CATALOG[selBrand.value]) { 
+      selModel.disabled = false; Object.keys(CATALOG[selBrand.value]).forEach(model => selModel.options.add(new Option(model, model))); 
+  } else { selModel.disabled = true; }
+}
+
+function updateTrims() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selBrand || !selModel || !selTrim) return;
+  selTrim.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+  if (selModel.value && CATALOG[selBrand.value] && CATALOG[selBrand.value][selModel.value]) { 
+      selTrim.disabled = false; Object.keys(CATALOG[selBrand.value][selModel.value]).forEach(trim => selTrim.options.add(new Option(trim, trim))); 
+  } else { selTrim.disabled = true; }
+}
+
+function applyCatalog() {
+  const selBrand = $('catBrand'), selModel = $('catModel'), selTrim = $('catTrim');
+  if (!selTrim || !selTrim.value || !CATALOG[selBrand.value] || !CATALOG[selBrand.value][selModel.value]) return;
+  const data = CATALOG[selBrand.value][selModel.value][selTrim.value];
+  if (!data) return;
+  
+  setVal('vCarName', `${selBrand.value} ${selModel.value}`); setVal('vCarPkg', selTrim.value); setVal('vCarVIN', ''); setVal('vCarColor', '');
+  setVal('vCarSpecs', data.specs || ""); setVal('vCarStdEq', data.stdEq || ""); setVal('vCarEq', '');
+  
+  setVal('vPriceOld', data.priceOld || ""); if(data.priceOld) formatInputNumber($('vPriceOld'));
+  setVal('vPriceNew', data.priceNew || ""); if(data.priceNew) formatInputNumber($('vPriceNew'));
+  
+  setVal('calcCostCar', data.costCar || ""); if(data.costCar) formatInputNumber($('calcCostCar'));
+  setVal('ojBasePrice', data.baseMcp || ""); if(data.baseMcp) formatInputNumber($('ojBasePrice'));
+  
+  currentCatalogSupport = data.support || ""; 
+  const tiCb = $('useTISupport'); if (tiCb) tiCb.checked = false; 
+  setVal('calcSupport', ""); 
+  
+  document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+  db.imgCars = []; saveDB(); renderGallery(); renderKP(); calculateMargin(); calculateOjMargin();
+  calculateCredit('price'); // Пересчет кредита при загрузке цены из каталога
+  showToast("✅ Автомобиль загружен из каталога");
+}
+
+function normalizeCarKey(name) { return (name || '').toLowerCase().replace(/\s+/g, '').replace(/plus/g, '+'); }
+function onCarNameInput() { db.imgCars = []; saveDB(); renderGallery(); renderKP(); }
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  const t = $(tabId); if (t) t.classList.add('active'); 
+  if (btn) btn.classList.add('active'); 
+  renderLists();
+}
+
+const vLogo = $('vLogoImg');
+if (vLogo) {
+  vLogo.addEventListener('change', function() {
+    if (!this.files || !this.files.length) return; 
+    compressImage(this.files[0], compressed => { db.imgLogo = compressed; saveDB(); renderKP(); });
+  });
+}
+
+const vImg = $('vCarImg');
+if (vImg) {
+  vImg.addEventListener('change', async function () {
+    if (!this.files || !this.files.length) return; 
+    const files = Array.from(this.files).slice(0, 3); let newPhotos = [];
+    for(let file of files) { await new Promise(res => { compressImage(file, compressed => { newPhotos.push(compressed); res(); }); }); }
+    db.imgCars = [...(db.imgCars || []), ...newPhotos].slice(0, 3); saveDB(); renderGallery(); renderKP(); this.value = '';
+  });
+}
+
+function renderGallery() {
+  const gal = $('mini-gallery'); if(!gal) return;
+  if(!db.imgCars || db.imgCars.length === 0) { gal.innerHTML = ''; return; }
+  gal.innerHTML = db.imgCars.map((img, i) => `
+    <div style="position:relative; width:65px; height:65px; border-radius:6px; overflow:hidden; border:1px solid #d1d5db; flex-shrink:0;">
+      <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
+      <button onclick="removePhoto(${i})" style="position:absolute; top:0; right:0; background:rgba(220,38,38,0.9); color:#fff; border:none; width:22px; height:22px; font-size:14px; cursor:pointer; margin:0; padding:0; border-radius:0 0 0 4px;">×</button>
+    </div>
+  `).join('');
+}
+
+function removePhoto(idx) { if (!db.imgCars) return; db.imgCars.splice(idx, 1); saveDB(); renderGallery(); renderKP(); }
+
+// ФУНКЦИЯ РАСЧЕТА КРЕДИТА
+// ФУНКЦИЯ РАСЧЕТА КРЕДИТА (ОБНОВЛЁННАЯ)
+function calculateCredit(source) {
+  let price = getNum(val('vPriceNew')); 
+  let rubInput = $('creditInitialRub');
+  let pctInput = $('creditInitialPct');
+  let rub = getNum(rubInput ? rubInput.value : '');
+  let pct = parseFloat(pctInput ? pctInput.value : '') || 0;
+
+  if (price > 0) {
+    if (source === 'rub') {
+      pct = (rub / price) * 100;
+      if (pctInput) pctInput.value = pct > 0 ? pct.toFixed(1) : '';
+    } else if (source === 'pct' || source === 'price') {
+      rub = price * (pct / 100);
+      if (rubInput) {
+        if (rub > 0) { rubInput.value = Math.round(rub); formatInputNumber(rubInput); } 
+        else { rubInput.value = ''; }
+      }
+    }
+  }
+
+  let kasko = getNum(val('creditKasko'));
+  let finProd = getNum(val('creditFinProducts'));
+  let includeExtras = $('creditIncludeExtras') ? $('creditIncludeExtras').checked : false;
+  let extras = includeExtras ? (kasko + finProd) : 0;
+
+  let downpayment = getNum(rubInput ? rubInput.value : '');
+  let principal = (price - downpayment) + extras;
+  if (principal < 0) principal = 0;
+
+  let term = parseInt(val('creditTerm')) || 0;
+  let rate = parseFloat(val('creditRate')) || 0;
+  let payment = 0;
+
+  if (principal > 0 && term > 0) {
+    if (rate > 0) {
+      let monthlyRate = (rate / 100) / 12;
+      payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+    } else {
+      payment = principal / term;
+    }
+  }
+
+  let finalPayment = Math.round(payment);
+  let totalPaid = finalPayment * term;
+  let overpay = totalPaid - principal;
+
+  if ($('outCreditPayment')) $('outCreditPayment').textContent = finalPayment > 0 ? finalPayment.toLocaleString('ru-RU') + ' ₽' : '0 ₽';
+  if ($('outCreditBody')) $('outCreditBody').textContent = principal > 0 ? principal.toLocaleString('ru-RU') + ' ₽' : '0 ₽';
+  if ($('outCreditOverpay')) $('outCreditOverpay').textContent = overpay > 0 ? overpay.toLocaleString('ru-RU') + ' ₽' : '0 ₽';
+  if ($('docCreditFinalPay')) $('docCreditFinalPay').textContent = finalPayment > 0 ? finalPayment.toLocaleString('ru-RU') + ' ₽/мес' : '0 ₽/мес';
+  if ($('docCreditDownpay')) $('docCreditDownpay').textContent = downpayment.toLocaleString('ru-RU') + ' ₽';
+  if ($('docCreditTerm')) $('docCreditTerm').textContent = term + ' мес.';
+}
+
+// ГРАФИК ПЛАТЕЖЕЙ — построение данных
+function buildSchedule() {
+  let price = getNum(val('vPriceNew'));
+  let downpayment = getNum(val('creditInitialRub'));
+  let kasko = getNum(val('creditKasko'));
+  let finProd = getNum(val('creditFinProducts'));
+  let includeExtras = $('creditIncludeExtras') ? $('creditIncludeExtras').checked : false;
+  let extras = includeExtras ? (kasko + finProd) : 0;
+  let principal = (price - downpayment) + extras;
+  if (principal < 0) principal = 0;
+
+  let term = parseInt(val('creditTerm')) || 0;
+  let rate = parseFloat(val('creditRate')) || 0;
+  let monthlyRate = rate > 0 ? (rate / 100) / 12 : 0;
+  let payment = 0;
+  if (principal > 0 && term > 0) {
+    if (rate > 0) {
+      payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
+    } else { payment = principal / term; }
+  }
+  payment = Math.round(payment);
+
+  let schedule = []; let balance = principal; let totalInterest = 0; let totalPrincipal = 0;
+  for (let i = 1; i <= term; i++) {
+    let interestPart = Math.round(balance * monthlyRate);
+    let principalPart = payment - interestPart;
+    if (i === term) { principalPart = balance; payment = principalPart + interestPart; }
+    balance -= principalPart; if (balance < 0) balance = 0;
+    totalInterest += interestPart; totalPrincipal += principalPart;
+    schedule.push({ month: i, payment: payment, interest: interestPart, principal: principalPart, balance: balance });
+  }
+  return { schedule, totalInterest, totalPrincipal, totalPayment: totalInterest + totalPrincipal, principal, downpayment, term, rate, payment: schedule.length > 0 ? schedule[0].payment : 0 };
+}
+
+// ГРАФИК ПЛАТЕЖЕЙ — открыть модалку
+function openScheduleModal() {
+  let data = buildSchedule();
+  if (!data.schedule.length) return showToast('❌ Заполните параметры кредита', true);
+  let summary = $('scheduleSummary');
+  if (summary) {
+    summary.innerHTML = '<div class="sched-card"><div>Сумма кредита</div><div>' + data.principal.toLocaleString('ru-RU') + ' ₽</div></div>' +
+      '<div class="sched-card"><div>Переплата</div><div style="color:#ff6b6b">' + data.totalInterest.toLocaleString('ru-RU') + ' ₽</div></div>' +
+      '<div class="sched-card"><div>Итого выплат</div><div>' + data.totalPayment.toLocaleString('ru-RU') + ' ₽</div></div>';
+  }
+  let tbody = $('scheduleBody');
+  if (tbody) {
+    tbody.innerHTML = data.schedule.map(function(r) {
+      return '<tr><td style="text-align:center; color:rgba(255,255,255,.4);">' + r.month + '</td><td><b>' + r.payment.toLocaleString('ru-RU') + '</b></td><td style="color:#ff6b6b;">' + r.interest.toLocaleString('ru-RU') + '</td><td style="color:#30d158;">' + r.principal.toLocaleString('ru-RU') + '</td><td>' + r.balance.toLocaleString('ru-RU') + '</td></tr>';
+    }).join('');
+  }
+  let m = $('scheduleModal'); if (m) m.classList.add('active');
+}
+function closeScheduleModal() { let m = $('scheduleModal'); if (m) m.classList.remove('active'); }
+
+// ГРАФИК — копировать текстом
+function copyScheduleText() {
+  let data = buildSchedule();
+  if (!data.schedule.length) return;
+  let lines = ['График платежей | Кредит: ' + data.principal.toLocaleString('ru-RU') + ' р. | ' + data.rate + '% | ' + data.term + ' мес.', '', 'N  Платеж  %банку  Тело  Остаток'];
+  data.schedule.forEach(function(r) {
+    lines.push(r.month + '\t' + r.payment.toLocaleString('ru-RU') + '\t' + r.interest.toLocaleString('ru-RU') + '\t' + r.principal.toLocaleString('ru-RU') + '\t' + r.balance.toLocaleString('ru-RU'));
+  });
+  lines.push('', 'Переплата: ' + data.totalInterest.toLocaleString('ru-RU') + ' р.');
+  navigator.clipboard.writeText(lines.join('\n')).then(function() { showToast('📋 График скопирован!'); });
+}
+
+// ГРАФИК — скачать PDF
 function downloadSchedulePDF() {
   let data = buildSchedule();
   if (!data.schedule.length) return showToast('❌ Заполните параметры кредита', true);
@@ -85,3 +1040,220 @@ function downloadSchedulePDF() {
     showToast('❌ Ошибка создания PDF', true);
   });
 }
+
+function renderKP() {
+  const dc = $('document-container');
+  if (dc) dc.className = `theme-${val('vTheme') || 'premium'}`;
+  
+  if ($('outDName')) $('outDName').textContent = val('vDName') || DEALER_SETTINGS.name;
+  if ($('outDAddr')) $('outDAddr').textContent = val('vDAddr') || DEALER_SETTINGS.address;
+  if ($('outDContacts')) $('outDContacts').textContent = val('vDPhone') || DEALER_SETTINGS.phone;
+
+  let finalLogo = db.imgLogo || DEALER_SETTINGS.logo;
+  if ($('outLogo')) $('outLogo').innerHTML = finalLogo ? `<img src="${finalLogo}" onerror="this.style.display='none'">` : '<span>Логотип</span>';
+
+  if ($('outNum')) $('outNum').textContent = val('vNum') ? `№ ${val('vNum')}` : '№ —';
+  if ($('outToday')) $('outToday').textContent = `Дата: ${new Date().toLocaleDateString('ru-RU')}`;
+  if ($('outValid')) $('outValid').textContent = val('vDate') ? `Действительно: ${val('vDate')}` : 'Срок: —';
+
+  if ($('outCarName')) $('outCarName').textContent = val('vCarName') || 'Модель автомобиля';
+  if ($('outCarPkg')) $('outCarPkg').textContent = val('vCarPkg') || 'Базовая комплектация';
+
+  let specsArr = [];
+  if (val('vCarVIN')) specsArr.push(`VIN-номер: ${val('vCarVIN')}`);
+  if (val('vCarColor')) specsArr.push(`Цвет кузова: ${val('vCarColor')}`);
+  if (val('vCarSpecs')) specsArr.push(val('vCarSpecs'));
+  if ($('outCarSpecs')) $('outCarSpecs').textContent = specsArr.join('\n') || 'Характеристики не указаны';
+
+  let eqList = val('vCarEq').split('\n').filter(Boolean);
+  if ($('outCarEq')) $('outCarEq').innerHTML = eqList.length ? eqList.map(i => `<li>${i}</li>`).join('') : '<li>Нет данных</li>';
+
+  let stdEqList = val('vCarStdEq').split('\n').filter(Boolean);
+  if ($('stdEqBlock') && $('outCarStdEq')) {
+      if (stdEqList.length > 0) { $('stdEqBlock').style.display = 'block'; $('outCarStdEq').innerHTML = stdEqList.map(i => `<li>${i}</li>`).join(''); } 
+      else { $('stdEqBlock').style.display = 'none'; }
+  }
+
+  let dopSum = 0; let selectedCount = 0; let dopItems = [];
+  document.querySelectorAll('.dop-check').forEach(cb => {
+    if (cb.checked) { 
+        let prInput = $(cb.id + '_price'); 
+        let p = prInput ? (parseInt(prInput.value) || 0) : 0; 
+        dopSum += p; selectedCount++; 
+        dopItems.push(`<b>${cb.dataset.name}</b> — ${p.toLocaleString('ru-RU')} ₽`); 
+    }
+  });
+
+  const sumLabel = $('dops-summary');
+  if (sumLabel) {
+      if (selectedCount > 0) { sumLabel.style.display = 'block'; sumLabel.textContent = `Выбрано опций: ${selectedCount} (на ${dopSum.toLocaleString('ru-RU')} ₽)`; } 
+      else { sumLabel.style.display = 'none'; }
+  }
+
+  if ($('dealerEqBlock') && $('outDealerEq')) {
+      if (dopItems.length > 0) { $('dealerEqBlock').style.display = 'block'; $('outDealerEq').innerHTML = dopItems.map(i => `<li>${i}</li>`).join(''); } 
+      else { $('dealerEqBlock').style.display = 'none'; }
+  }
+
+  let baseOldNum = getNum(val('vPriceOld')); let baseNewNum = getNum(val('vPriceNew'));
+  let finalOld = baseOldNum > 0 ? baseOldNum + dopSum : dopSum; let finalNew = baseNewNum; 
+
+  if ($('outPriceOld')) $('outPriceOld').textContent = baseOldNum > 0 ? formatRub(finalOld) : "—";
+  if ($('outPriceNew')) $('outPriceNew').textContent = baseNewNum > 0 ? formatRub(finalNew) : "—";
+
+  let diff = finalOld - finalNew;
+  if ($('outDiscount')) {
+      if (diff > 0 && baseOldNum > 0 && baseNewNum > 0) { $('outDiscount').textContent = `Выгода ${diff.toLocaleString('ru-RU')} ₽`; $('outDiscount').style.display = 'block'; } 
+      else { $('outDiscount').style.display = 'none'; }
+  }
+
+  // Показывать/скрывать блок кредита в документе
+  const creditBadge = $('docCreditBadge');
+  const showCreditCb = $('showCreditInKP');
+  if (creditBadge && showCreditCb) {
+    creditBadge.style.display = showCreditCb.checked ? 'flex' : 'none';
+  }
+
+  if ($('outMgrName')) $('outMgrName').textContent = val('vMgrName') || 'Имя менеджера'; 
+  if ($('outMgrPhone')) $('outMgrPhone').textContent = val('vMgrPhone') || 'Телефон'; 
+  if ($('outMgrEmail')) $('outMgrEmail').textContent = val('vMgrEmail') || 'Email';
+
+  const carKey = normalizeCarKey(val('vCarName')); const photoBox = $('outCarImg'); let imagesToRender = [];
+  if (db.imgCars && db.imgCars.length > 0) { imagesToRender = db.imgCars; } else if (carKey && AUTO_IMAGES[carKey]) { imagesToRender = [AUTO_IMAGES[carKey]]; }
+  if (val('vTheme') !== 'catalog' && imagesToRender.length > 0) { imagesToRender = [imagesToRender[0]]; }
+  if (photoBox) {
+      if (imagesToRender.length > 0) { photoBox.setAttribute('data-count', imagesToRender.length); photoBox.innerHTML = imagesToRender.map(img => `<img src="${img}">`).join(''); } 
+      else { photoBox.setAttribute('data-count', 0); photoBox.innerHTML = '<span>Фото авто</span>'; }
+  }
+}
+
+function autoNumDate() {
+  setVal('vNum', `${new Date().getFullYear()}-${String(db.counter++).padStart(3, '0')}`);
+  let d = new Date(); d.setDate(d.getDate() + 7); setVal('vDate', `до ${d.toLocaleDateString('ru-RU')}`); saveDB(); renderKP();
+}
+
+function confirmClear() {
+  if(confirm("Очистить все данные в анкете?")) {
+    ['vDName','vDAddr','vDPhone','vNum','vDate','vCarName','vCarPkg','vCarVIN','vCarColor','vCarSpecs','vCarEq','vCarStdEq','vPriceOld','vPriceNew','calcCostCar','calcCostDops','calcSupport','calcFin','ojFactPaid','ojBasePrice','ojDiscount','vMgrName','vMgrPhone','vMgrEmail','creditInitialRub','creditInitialPct','creditKasko','creditFinProducts'].forEach(id => setVal(id, ''));
+    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+    db.imgCars = []; 
+    if($('useTISupport')) $('useTISupport').checked = false; 
+    if($('showCreditInKP')) $('showCreditInKP').checked = false;if($('creditIncludeExtras')) $('creditIncludeExtras').checked = true;
+    currentCatalogSupport = "";
+    saveDB(); renderGallery(); renderKP(); 
+    const selBrand = $('catBrand'); if(selBrand) selBrand.value = ''; updateModels();
+    calculateMargin(); calculateOjMargin(); calculateCredit('price');
+    showToast("Анкета очищена!");
+  }
+}
+
+function saveItem(type) {
+  if (type === 'mgrs') {
+    if (!val('mName')) return showToast("❌ Введите имя менеджера", true);
+    db.mgrs.push({ n: val('mName'), p: val('mPhone'), e: val('mEmail') }); ['mName','mPhone','mEmail'].forEach(id => setVal(id, ''));
+  } else if (type === 'tpls') {
+    if (!val('tName')) return showToast("❌ Назовите шаблон", true); let savedDops = [];
+    document.querySelectorAll('.dop-check').forEach(cb => { 
+        if (cb.checked) {
+            let pr = $(cb.id + '_price');
+            savedDops.push({ id: cb.id, price: pr ? pr.value : 0, name: cb.dataset.name }); 
+        }
+    });
+    db.tpls.push({
+      title: val('tName'), lay: val('vTheme'), dn: val('vDName'), da: val('vDAddr'), dp: val('vDPhone'), cn: val('vCarName'), cp: val('vCarPkg'), cvin: val('vCarVIN'), ccol: val('vCarColor'), cs: val('vCarSpecs'),
+      ce: val('vCarEq'), cse: val('vCarStdEq'), cpo: val('vPriceOld'), cpn: val('vPriceNew'), mn: val('vMgrName'), mp: val('vMgrPhone'), me: val('vMgrEmail'), dops: savedDops
+    });
+    setVal('tName', '');
+  }
+  saveDB(); renderLists(); showToast("✅ Сохранено!");
+}
+
+function loadItem(type, idx) {
+  let i = db[type][idx]; if (!i) return;
+  if (type === 'mgrs') { setVal('vMgrName', i.n); setVal('vMgrPhone', i.p); setVal('vMgrEmail', i.e); } 
+  else if (type === 'tpls') {
+    setVal('vTheme', i.lay); setVal('vDName', i.dn); setVal('vDAddr', i.da); setVal('vDPhone', i.dp); setVal('vCarName', i.cn); setVal('vCarPkg', i.cp); setVal('vCarVIN', i.cvin); setVal('vCarColor', i.ccol);
+    setVal('vCarSpecs', i.cs); setVal('vCarEq', i.ce); setVal('vCarStdEq', i.cse); setVal('vPriceOld', i.cpo); setVal('vPriceNew', i.cpn); setVal('vMgrName', i.mn); setVal('vMgrPhone', i.mp); setVal('vMgrEmail', i.me);
+    document.querySelectorAll('.dop-check').forEach(cb => cb.checked = false);
+    if (i.dops && Array.isArray(i.dops)) {
+      let needsReRender = false;
+      i.dops.forEach(d => { if (!document.getElementById(d.id) && d.id.startsWith('cdop_')) { db.customDops.push({ id: d.id, name: d.name || 'Опция', price: d.price }); needsReRender = true; } });
+      if(needsReRender) { saveDB(); renderDopsUI(); }
+      i.dops.forEach(d => { let cb = document.getElementById(d.id); let pr = document.getElementById(d.id + '_price'); if (cb) cb.checked = true; if (pr) pr.value = d.price; });
+    }
+    ['vPriceOld', 'vPriceNew'].forEach(id => { let el = $(id); if(el && el.value) formatInputNumber(el); });
+    calculateCredit('price');
+  }
+  switchTab('tab-data', document.querySelector('.tab')); renderKP(); showToast("✅ Данные загружены!");
+}
+
+function delItem(type, idx) { if (confirm('Удалить навсегда?')) { db[type].splice(idx, 1); saveDB(); renderLists(); } }
+
+function renderLists() {
+  const lm = $('list-mgrs'); if (lm && db.mgrs) lm.innerHTML = db.mgrs.map((m, i) => `<div class="card"><b>${m.n}</b><p>${m.p || 'Нет тел.'} | ${m.e || 'Нет email'}</p><div class="acts"><button class="btn-green" onclick="loadItem('mgrs',${i})">Вставить</button><button class="btn-red" onclick="delItem('mgrs',${i})">Удалить</button></div></div>`).join('');
+  const lt = $('list-tpls'); if (lt && db.tpls) lt.innerHTML = db.tpls.map((t, i) => `<div class="card"><b>${t.title}</b><p>${t.cn || 'Без авто'}</p><div class="acts"><button class="btn-green" onclick="loadItem('tpls',${i})">Загрузить</button><button class="btn-red" onclick="delItem('tpls',${i})">Удалить</button></div></div>`).join('');
+}
+
+function downloadPDF() {
+  const btn = $('btn-pdf'); if (!btn) return;
+  const originalText = btn.textContent; btn.textContent = '⏳ Делаем PDF...'; btn.disabled = true;
+  const element = $('document-container'); const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
+  element.style.width = '210mm'; element.style.height = 'auto'; 
+
+  setTimeout(() => {
+    html2canvas(element, { scale: 3, useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL('image/jpeg', 0.95); const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210; const pdfHeight = 297; let finalWidth = pdfWidth; let finalHeight = (canvas.height * pdfWidth) / canvas.width;
+      if (finalHeight > pdfHeight) { finalHeight = pdfHeight; finalWidth = (canvas.width * pdfHeight) / canvas.height; }
+      let xOffset = (pdfWidth - finalWidth) / 2; pdf.addImage(imgData, 'JPEG', xOffset, 0, finalWidth, finalHeight);
+      let fileName = 'КП_Автосалон.pdf'; if (val('vCarName')) fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.pdf`;
+      pdf.save(fileName); if (wasMobile) document.body.classList.add('mobile-view'); element.style.width = '';
+      btn.textContent = originalText; btn.disabled = false; showToast("✅ PDF успешно скачан!");
+    }).catch(e => {
+      btn.textContent = originalText; btn.disabled = false; showToast("❌ Ошибка PDF", true);
+    });
+  }, 300);
+}
+
+function downloadImage() {
+  const btn = $('btn-img'); if (!btn) return;
+  const originalText = btn.textContent; btn.textContent = '⏳ Делаем фото...'; btn.disabled = true;
+  const wasMobile = document.body.classList.contains('mobile-view'); document.body.classList.remove('mobile-view');
+  const element = $('document-container'); element.style.width = '800px';
+
+  setTimeout(() => {
+    html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+      if (wasMobile) document.body.classList.add('mobile-view'); element.style.width = '';
+      let fileName = 'КП_Автосалон.jpg'; if (val('vCarName')) fileName = `КП_${val('vCarName').replace(/\s+/g, '_')}.jpg`;
+      const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 0.9); link.click();
+      btn.textContent = originalText; btn.disabled = false; showToast("✅ Фото успешно скачано!");
+    }).catch(e => {
+      btn.textContent = originalText; btn.disabled = false; showToast("❌ Ошибка фото", true);
+    });
+  }, 200);
+}
+
+// ==========================================
+// ЗАПУСК: 100% ГАРАНТИЯ ЗАГРУЗКИ БЕЗ ЗАВИСАНИЙ
+// ==========================================
+try {
+  populateBrandList(); 
+  renderDopsUI(); 
+  renderLists(); 
+  renderGallery(); 
+  renderKP(); 
+  calculateMargin(); 
+  calculateOjMargin();
+} catch (error) {
+  // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ
+  console.error(error);
+  localStorage.removeItem('kp_db_v24');
+  alert("Браузер повредил старые файлы. Мы восстановили работу.");
+  location.reload();
+}
+
+// Запускаем фоновую загрузку цен
+loadCatalogFromGoogle();
+</script>
+</body>
+</html>

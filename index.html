@@ -115,13 +115,16 @@
         
         <div class="row">
           <input type="text" id="calcSupport" placeholder="Поддержка" oninput="formatInputNumber(this); calculateMargin()">
-          <input type="text" id="calcFin" placeholder="Фин. услуги" oninput="formatInputNumber(this); calculateMargin()">
+          <input type="text" id="calcFin" placeholder="Маржа ОКС (85% от ФП)" oninput="formatInputNumber(this); calculateMargin(); syncFinToCredit()">
         </div>
         <div class="margin-result">
-          <div style="color:#6b7280; font-weight:normal; font-size:11px; margin-bottom:8px; line-height: 1.3;">
-            <b>Omoda/Jaecoo:</b> (Цена - Авто - Допы)/1.22 + Поддержка + Фин/1.22<br>
-            <b>Belgee:</b> (Цена - Авто - Допы)/1.22 + Поддержка/1.22 + Фин/1.22
-          </div>
+          <div style="font-weight:normal; font-size:11px; margin-bottom:8px; line-height:1.3;">
+  <div><b>Omoda/Jaecoo:</b> (Цена - Авто - Допы)/1.22 + Поддержка + Маржа ОКС/1.22</div>
+  <div><b>Belgee:</b> (Цена - Авто - Допы)/1.22 + Поддержка/1.22 + Маржа ОКС/1.22</div>
+  <div style="margin-top:4px; color:#3a6ae8 !important;">
+    Маржа ОКС = 85% от суммы фин. продуктов
+  </div>
+</div>
           <div style="margin-bottom: 4px;">Маржа Omoda/JAECOO: <span id="outMarginOmoda">0 ₽</span></div>
           <div>Маржа BELGEE: <span id="outMarginBelgee">0 ₽</span></div>
         </div>
@@ -560,18 +563,49 @@ function toggleCalc(contentId, iconId) {
 }
 
 function calculateMargin() {
-  let finalPrice = getNum(val('vPriceNew')); let costCar = getNum(val('calcCostCar')); let costDops = getNum(val('calcCostDops')); let support = getNum(val('calcSupport')); let fin = getNum(val('calcFin'));
-  if (!finalPrice && !costCar) { if($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽'; if($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽'; return; }
-  
-  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
-  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (fin / 1.22)); 
-  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (fin / 1.22));
-  
-  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534'; let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
-  if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
-  if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
-}
+  let finalPrice = getNum(val('vPriceNew'));
+  let costCar = getNum(val('calcCostCar'));
+  let costDops = getNum(val('calcCostDops'));
+  let support = getNum(val('calcSupport'));
+  let oksMargin = getNum(val('calcFin')); // теперь это именно Маржа ОКС
 
+  if (!finalPrice && !costCar) {
+    if ($('outMarginOmoda')) $('outMarginOmoda').innerHTML = '0 ₽';
+    if ($('outMarginBelgee')) $('outMarginBelgee').innerHTML = '0 ₽';
+    return;
+  }
+
+  let metalMarginNoVat = (finalPrice - costCar - costDops) / 1.22;
+  let marginOmoda = Math.round((metalMarginNoVat || 0) + support + (oksMargin / 1.22));
+  let marginBelgee = Math.round((metalMarginNoVat || 0) + (support / 1.22) + (oksMargin / 1.22));
+
+  let colorOmoda = marginOmoda < 0 ? '#dc2626' : '#166534';
+  let colorBelgee = marginBelgee < 0 ? '#dc2626' : '#166534';
+
+  if ($('outMarginOmoda')) {
+    $('outMarginOmoda').innerHTML = `<span style="color:${colorOmoda}">${marginOmoda.toLocaleString('ru-RU')} ₽</span>`;
+  }
+
+  if ($('outMarginBelgee')) {
+    $('outMarginBelgee').innerHTML = `<span style="color:${colorBelgee}">${marginBelgee.toLocaleString('ru-RU')} ₽</span>`;
+  }
+}
+function syncFinToCredit() {
+  let oksMargin = getNum(val('calcFin')); // вводим маржу ОКС
+  let fpInput = $('creditFinProducts');
+
+  if (!fpInput) return;
+
+  if (oksMargin > 0) {
+    let fullFinProducts = Math.round(oksMargin / 0.85); // 85% -> 100%
+    fpInput.value = String(fullFinProducts);
+    formatInputNumber(fpInput);
+  } else {
+    fpInput.value = '';
+  }
+
+  calculateCredit('extra');
+}
 function calculateOjMargin() {
   let factPaid = getNum(val('ojFactPaid')); let basePrice = getNum(val('ojBasePrice'));
   let discountInput = val('ojDiscount').replace(',', '.'); let discount = parseFloat(discountInput) || 0; 
@@ -608,6 +642,7 @@ function removeCustomDop(id) {
   } 
 }
 
+  
 function renderDopsUI() {
   const list = $('modal-dops-list'); if (!list) return;
   let tempState = {}; 
@@ -1243,6 +1278,7 @@ try {
   renderGallery(); 
   renderKP(); 
   calculateMargin(); 
+  syncFinToCredit();
   calculateOjMargin();
 } catch (error) {
   // ЕСЛИ КЭШ БРАУЗЕРА УБИТ НАПРОЧЬ — СБРАСЫВАЕМ И ВОССТАНАВЛИВАЕМ

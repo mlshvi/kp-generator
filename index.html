@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Генератор КП — Максимум</title>
-
+<title>DealDesk by Mlshvi</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><defs><linearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22><stop offset=%220%22 stop-color=%22%237da2ff%22/><stop offset=%221%22 stop-color=%22%234062bd%22/></linearGradient></defs><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22url(%23g)%22/><text x=%2250%22 y=%2263%22 font-size=%2236%22 font-family=%22Arial,sans-serif%22 font-weight=%22800%22 fill=%22white%22 text-anchor=%22middle%22 letter-spacing=%222%22>DDM</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -237,6 +237,51 @@ button:hover{
   box-shadow:0 20px 60px rgba(0,0,0,.28) !important;
 }
 /* ===== THEME: SOFT DARK END ===== */
+  .brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:4px 0 14px;
+  user-select:none;
+}
+
+.brand-logo{
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  background: linear-gradient(135deg,#7da2ff 0%, #4062bd 100%);
+  color:#fff;
+  font-weight:800;
+  font-size:15px;
+  letter-spacing:1.5px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 6px 18px rgba(64,98,189,.35), inset 0 0 0 1px rgba(255,255,255,.15);
+  font-family: Arial, sans-serif;
+}
+
+.brand-text{
+  display:flex;
+  flex-direction:column;
+  line-height:1.1;
+}
+
+.brand-name{
+  font-size:20px;
+  font-weight:700;
+  color:#fff;
+  letter-spacing:.3px;
+}
+
+.brand-by{
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.45);
+  margin-top:2px;
+}
 </style>
 </head>
 <body>
@@ -244,7 +289,13 @@ button:hover{
 <div id="toast-container"></div>
 
 <aside class="panel">
-  <h2>Генератор КП — Максимум</h2>
+  <div class="brand">
+  <div class="brand-logo">DDM</div>
+  <div class="brand-text">
+    <div class="brand-name">DealDesk</div>
+    <div class="brand-by">by Mlshvi</div>
+  </div>
+</div>
 
   <div class="telegram-warning" id="tgWarning">
     ⚠️ <b>Вы открыли сайт внутри мессенджера!</b><br>Для правильного скачивания нажмите на компас или откройте сайт в Safari / Chrome.

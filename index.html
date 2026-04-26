@@ -515,6 +515,125 @@ body.light-theme .sched-card{
 }
 body.light-theme .sched-card div:first-child{ color:rgba(0,0,0,.5) !important; }
 body.light-theme .sched-card div:last-child{ color:#1f2330 !important; }
+  /* ===== БЛОК АКТУАЛЬНЫХ СТАВОК ===== */
+.rates-block{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(48,209,88,.18);
+  border-radius:12px;
+  padding:12px;
+  margin:10px 0;
+}
+.rates-header{
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  font-weight:700;
+  color:#67d48f;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  user-select:none;
+}
+.rates-header:hover{ opacity:.8; }
+.rates-tabs{
+  display:flex;
+  gap:4px;
+  margin:12px 0 10px;
+  background:rgba(0,0,0,.2);
+  padding:3px;
+  border-radius:10px;
+}
+.rates-tab{
+  flex:1;
+  padding:7px 8px;
+  text-align:center;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  border-radius:8px;
+  background:transparent;
+  color:rgba(255,255,255,.5);
+  border:none;
+  transition:all .2s;
+}
+.rates-tab:hover{ color:rgba(255,255,255,.85); }
+.rates-tab.active{
+  background:linear-gradient(135deg,#35b86a,#2b8d53);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(53,184,106,.3);
+}
+.rates-image-wrap{
+  background:#fff;
+  border-radius:8px;
+  overflow:hidden;
+  cursor:zoom-in;
+  border:1px solid rgba(255,255,255,.08);
+  min-height:120px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.rates-image-wrap img{
+  width:100%;
+  height:auto;
+  display:block;
+  transition:transform .2s;
+}
+.rates-image-wrap:hover img{ transform:scale(1.02); }
+.rates-image-wrap .rates-error{
+  color:#9ca3af;
+  font-size:12px;
+  padding:30px 20px;
+  text-align:center;
+  line-height:1.5;
+}
+body.light-theme .rates-block{
+  background:#f8fafc !important;
+  border-color:rgba(48,160,90,.22) !important;
+}
+body.light-theme .rates-header{ color:#15803d !important; }
+body.light-theme .rates-tabs{ background:#e5e7eb !important; }
+body.light-theme .rates-tab{ color:#6b7280 !important; }
+body.light-theme .rates-tab.active{ color:#fff !important; }
+
+/* ===== ЛАЙТБОКС ===== */
+.lightbox-overlay{
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,.92);
+  backdrop-filter:blur(10px);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:10000;
+  cursor:zoom-out;
+  padding:30px;
+}
+.lightbox-overlay.active{ display:flex; }
+.lightbox-overlay img{
+  max-width:95%;
+  max-height:95%;
+  object-fit:contain;
+  border-radius:8px;
+  box-shadow:0 20px 80px rgba(0,0,0,.6);
+}
+.lightbox-close{
+  position:absolute;
+  top:20px; right:20px;
+  width:44px; height:44px;
+  border-radius:50%;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  font-size:22px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.lightbox-close:hover{ background:rgba(255,255,255,.2); }
 </style>
 </head>
 <body>
@@ -668,6 +787,26 @@ body.light-theme .sched-card div:last-child{ color:#1f2330 !important; }
   </div>
   <div id="creditCalcContent" style="display: none; padding-top: 10px;">
     <span class="hint">Рассчитывается от Цены со скидкой + КАСКО + Фин.продукты</span>
+        <!-- БЛОК АКТУАЛЬНЫХ СТАВОК -->
+    <div class="rates-block">
+      <div class="rates-header" onclick="toggleRates()">
+        <span>📊 Актуальные ставки банков</span>
+        <span id="ratesToggleIcon">▶</span>
+      </div>
+      <div id="ratesContent" style="display:none; margin-top:10px;">
+        <div class="rates-tabs">
+          <button class="rates-tab active" onclick="switchRatesTab('omoda', this)">Omoda</button>
+          <button class="rates-tab" onclick="switchRatesTab('jaecoo', this)">Jaecoo</button>
+          <button class="rates-tab" onclick="switchRatesTab('belgee', this)">Belgee</button>
+        </div>
+        <div class="rates-image-wrap" id="ratesImageWrap" onclick="openLightbox()">
+          <img id="ratesImage" src="rates_omoda.jpg" alt="Ставки Omoda" onerror="ratesImageError(this)">
+        </div>
+        <div style="font-size:10px; color:rgba(255,255,255,.4); margin-top:6px; text-align:center;">
+          💡 Нажмите на изображение для увеличения
+        </div>
+      </div>
+    </div>
     <div class="row">
       <input type="number" id="creditTerm" placeholder="Срок (мес)" value="84" oninput="calculateCredit('term')">
       <input type="number" id="creditRate" placeholder="Ставка (%)" value="19.9" step="0.1" oninput="calculateCredit('rate')">
@@ -897,7 +1036,11 @@ body.light-theme .sched-card div:last-child{ color:#1f2330 !important; }
     </div>
   </div>
 </div>
-
+<!-- ЛАЙТБОКС ДЛЯ ПРОСМОТРА СТАВОК -->
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImage" src="" alt="">
+</div>
 <script>
 // ==========================================
 // 1. БЕЗОПАСНЫЕ ФУНКЦИИ И СЕЛЕКТОРЫ (Не могут зависнуть)
@@ -1072,7 +1215,71 @@ function toggleCalc(contentId, iconId) {
   if (content.style.display === 'none' || content.style.display === '') { content.style.display = 'block'; icon.textContent = '▼'; } 
   else { content.style.display = 'none'; icon.textContent = '▶'; }
 }
+// ===== ФУНКЦИИ БЛОКА СТАВОК =====
+function toggleRates() {
+  const content = $('ratesContent');
+  const icon = $('ratesToggleIcon');
+  if (!content || !icon) return;
+  if (content.style.display === 'none' || content.style.display === '') {
+    content.style.display = 'block';
+    icon.textContent = '▼';
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▶';
+  }
+}
 
+function switchRatesTab(brand, btn) {
+  // Подсветка активной вкладки
+  document.querySelectorAll('.rates-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  
+  // Меняем картинку
+  const img = $('ratesImage');
+  if (img) {
+    img.src = `rates_${brand}.jpg`;
+    img.alt = `Ставки ${brand}`;
+    img.style.display = 'block';
+    // Убираем сообщение об ошибке если было
+    const wrap = $('ratesImageWrap');
+    const errEl = wrap ? wrap.querySelector('.rates-error') : null;
+    if (errEl) errEl.remove();
+  }
+}
+
+function ratesImageError(imgEl) {
+  // Если картинка не загрузилась — показываем подсказку
+  imgEl.style.display = 'none';
+  const wrap = $('ratesImageWrap');
+  if (!wrap) return;
+  const existing = wrap.querySelector('.rates-error');
+  if (existing) return;
+  const msg = document.createElement('div');
+  msg.className = 'rates-error';
+  msg.innerHTML = `📷 Картинка не загружена<br><small>Положите файл <b>${imgEl.src.split('/').pop()}</b> рядом с сайтом</small>`;
+  wrap.appendChild(msg);
+}
+
+function openLightbox() {
+  const img = $('ratesImage');
+  const lightbox = $('lightboxOverlay');
+  const lbImg = $('lightboxImage');
+  if (!img || !lightbox || !lbImg) return;
+  // Не открываем если картинки нет
+  if (img.style.display === 'none' || !img.src) return;
+  lbImg.src = img.src;
+  lightbox.classList.add('active');
+}
+
+function closeLightbox() {
+  const lightbox = $('lightboxOverlay');
+  if (lightbox) lightbox.classList.remove('active');
+}
+
+// Закрытие лайтбокса по Esc
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
 function calculateMargin() {
   let finalPrice = getNum(val('vPriceNew'));
   let costCar = getNum(val('calcCostCar'));

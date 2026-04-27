@@ -596,7 +596,318 @@ body.light-theme .rates-header{ color:#15803d !important; }
 body.light-theme .rates-tabs{ background:#e5e7eb !important; }
 body.light-theme .rates-tab{ color:#6b7280 !important; }
 body.light-theme .rates-tab.active{ color:#fff !important; }
+/* ===== AI ЧАТ-АССИСТЕНТ ===== */
+.ai-chat-button{
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#3a6ae8,#1e4fc2);
+  border:none;
+  cursor:pointer;
+  z-index:9997;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:26px;
+  box-shadow:0 8px 32px rgba(58,106,232,.4);
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.ai-chat-button:hover{
+  transform:scale(1.1) translateY(-2px);
+  box-shadow:0 12px 40px rgba(58,106,232,.6);
+}
+.ai-chat-button.has-notification::after{
+  content:'';
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:12px;
+  height:12px;
+  background:#30d158;
+  border-radius:50%;
+  border:2px solid #fff;
+  animation:pulse 2s ease infinite;
+}
 
+.ai-chat-window{
+  position:fixed;
+  bottom:96px;
+  right:24px;
+  width:400px;
+  height:600px;
+  max-height:calc(100vh - 120px);
+  background:rgba(20,24,31,.98);
+  backdrop-filter:blur(40px) saturate(180%);
+  -webkit-backdrop-filter:blur(40px) saturate(180%);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);
+  z-index:9997;
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+  animation:chatSlideIn .3s ease;
+}
+.ai-chat-window.active{ display:flex; }
+
+@keyframes chatSlideIn{
+  from{ opacity:0; transform:translateY(20px) scale(.95); }
+  to{ opacity:1; transform:none; }
+}
+
+.ai-chat-header{
+  padding:16px 20px;
+  background:linear-gradient(135deg,#3a6ae8,#1e4fc2);
+  color:#fff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-shrink:0;
+}
+.ai-chat-header-info{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.ai-chat-avatar{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  background:rgba(255,255,255,.2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+}
+.ai-chat-title{
+  font-size:15px;
+  font-weight:700;
+  line-height:1.2;
+}
+.ai-chat-status{
+  font-size:11px;
+  opacity:.8;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.ai-chat-status::before{
+  content:'';
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#30d158;
+  animation:pulse 2s ease infinite;
+}
+.ai-chat-close{
+  background:rgba(255,255,255,.15)!important;
+  border:none!important;
+  color:#fff!important;
+  width:32px!important;
+  height:32px;
+  padding:0!important;
+  margin:0!important;
+  border-radius:50%!important;
+  cursor:pointer;
+  font-size:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:none!important;
+  transition:all .2s;
+}
+.ai-chat-close:hover{
+  background:rgba(255,255,255,.25)!important;
+  transform:rotate(90deg);
+}
+
+.ai-chat-messages{
+  flex:1;
+  overflow-y:auto;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.ai-msg{
+  max-width:85%;
+  padding:11px 15px;
+  border-radius:16px;
+  font-size:14px;
+  line-height:1.5;
+  word-wrap:break-word;
+  animation:msgFadeIn .3s ease;
+}
+@keyframes msgFadeIn{
+  from{ opacity:0; transform:translateY(8px); }
+  to{ opacity:1; transform:none; }
+}
+.ai-msg.user{
+  align-self:flex-end;
+  background:linear-gradient(135deg,#3a6ae8,#1e4fc2);
+  color:#fff;
+  border-bottom-right-radius:4px;
+}
+.ai-msg.bot{
+  align-self:flex-start;
+  background:rgba(255,255,255,.06);
+  color:#e7e9ee;
+  border:1px solid rgba(255,255,255,.08);
+  border-bottom-left-radius:4px;
+}
+.ai-msg.bot.error{
+  background:rgba(255,69,58,.12);
+  border-color:rgba(255,69,58,.3);
+  color:#ff8a82;
+}
+.ai-msg.system{
+  align-self:center;
+  font-size:11px;
+  color:rgba(255,255,255,.4);
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  background:none;
+  padding:4px 10px;
+}
+
+.ai-typing{
+  align-self:flex-start;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  border-bottom-left-radius:4px;
+  padding:14px 18px;
+  display:flex;
+  gap:5px;
+}
+.ai-typing span{
+  width:7px;
+  height:7px;
+  background:rgba(255,255,255,.5);
+  border-radius:50%;
+  animation:typingBounce 1.2s ease infinite;
+}
+.ai-typing span:nth-child(2){ animation-delay:.15s; }
+.ai-typing span:nth-child(3){ animation-delay:.3s; }
+@keyframes typingBounce{
+  0%,60%,100%{ transform:translateY(0); opacity:.4; }
+  30%{ transform:translateY(-6px); opacity:1; }
+}
+
+.ai-suggestions{
+  padding:0 20px 12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  flex-shrink:0;
+}
+.ai-suggestion{
+  font-size:12px;
+  padding:7px 12px;
+  background:rgba(58,106,232,.12);
+  border:1px solid rgba(58,106,232,.25);
+  color:#8eb0ff;
+  border-radius:14px;
+  cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+}
+.ai-suggestion:hover{
+  background:rgba(58,106,232,.2);
+  transform:translateY(-1px);
+}
+
+.ai-chat-input-wrap{
+  padding:14px 16px;
+  border-top:1px solid rgba(255,255,255,.08);
+  display:flex;
+  gap:8px;
+  flex-shrink:0;
+  background:rgba(0,0,0,.2);
+}
+.ai-chat-input{
+  flex:1;
+  padding:11px 14px!important;
+  background:rgba(255,255,255,.06)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:12px!important;
+  color:#fff!important;
+  font-size:14px!important;
+  resize:none;
+  margin:0!important;
+  max-height:100px;
+  min-height:42px;
+  font-family:inherit;
+}
+.ai-chat-input:focus{
+  border-color:rgba(58,106,232,.6)!important;
+}
+.ai-chat-send{
+  background:linear-gradient(135deg,#3a6ae8,#1e4fc2)!important;
+  border:none!important;
+  color:#fff!important;
+  width:42px!important;
+  height:42px!important;
+  border-radius:12px!important;
+  padding:0!important;
+  margin:0!important;
+  font-size:18px;
+  cursor:pointer;
+  flex-shrink:0;
+  transition:all .2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.ai-chat-send:hover:not(:disabled){
+  transform:scale(1.05);
+}
+.ai-chat-send:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+/* Светлая тема */
+body.light-theme .ai-chat-window{
+  background:rgba(255,255,255,.98);
+  border:1px solid rgba(0,0,0,.08);
+}
+body.light-theme .ai-msg.bot{
+  background:#f3f4f6;
+  color:#1f2330;
+  border-color:rgba(0,0,0,.06);
+}
+body.light-theme .ai-chat-input{
+  background:#fff!important;
+  color:#1f2330!important;
+  border-color:rgba(0,0,0,.12)!important;
+}
+body.light-theme .ai-chat-input-wrap{
+  background:#f8fafc;
+  border-top-color:rgba(0,0,0,.06);
+}
+
+/* Мобильная версия */
+@media (max-width:600px){
+  .ai-chat-window{
+    width:calc(100% - 24px);
+    right:12px;
+    left:12px;
+    bottom:88px;
+    height:calc(100vh - 110px);
+  }
+  .ai-chat-button{
+    bottom:16px;
+    right:16px;
+    width:54px;
+    height:54px;
+  }
+}
 /* ===== ЛАЙТБОКС ===== */
 .lightbox-overlay{
   position:fixed;
@@ -1034,6 +1345,54 @@ body.light-theme .rates-tab.active{ color:#fff !important; }
       <button class="btn-green" onclick="downloadSchedulePDF()" style="margin:0;">📄 Скачать PDF</button>
       <button class="btn-sec" onclick="copyScheduleText()" style="margin:0;">📋 Копировать текст</button>
     </div>
+  </div>
+</div>
+  <!-- AI ЧАТ-АССИСТЕНТ -->
+<button class="ai-chat-button" id="aiChatButton" onclick="toggleAiChat()" title="AI-помощник">
+  💬
+</button>
+
+<div class="ai-chat-window" id="aiChatWindow">
+  <div class="ai-chat-header">
+    <div class="ai-chat-header-info">
+      <div class="ai-chat-avatar">🤖</div>
+      <div>
+        <div class="ai-chat-title">AI-Помощник</div>
+        <div class="ai-chat-status">Готов помочь</div>
+      </div>
+    </div>
+    <button class="ai-chat-close" onclick="toggleAiChat()">✕</button>
+  </div>
+
+  <div class="ai-chat-messages" id="aiChatMessages">
+    <div class="ai-msg bot">
+      Привет! 👋 Я твой AI-помощник по продажам.<br><br>
+      Помогу:
+      • Сравнить модели авто<br>
+      • Обработать возражения клиента<br>
+      • Сформулировать преимущества<br>
+      • Подсказать аргументы для презентации<br><br>
+      Задавай любой вопрос! 🚀
+    </div>
+  </div>
+
+  <div class="ai-suggestions" id="aiSuggestions">
+    <div class="ai-suggestion" onclick="askAiQuick('Сравни выбранный автомобиль с конкурентами')">⚖️ Сравнить с конкурентами</div>
+    <div class="ai-suggestion" onclick="askAiQuick('Назови 5 главных преимуществ этого авто для презентации клиенту')">✨ Преимущества для клиента</div>
+    <div class="ai-suggestion" onclick="askAiQuick('Клиент сомневается из-за китайского бренда. Как отработать это возражение?')">🛡️ Возражение про бренд</div>
+    <div class="ai-suggestion" onclick="askAiQuick('Дай аргументы в пользу покупки в кредит')">💳 Аргументы для кредита</div>
+  </div>
+
+  <div class="ai-chat-input-wrap">
+    <textarea 
+      class="ai-chat-input" 
+      id="aiChatInput" 
+      placeholder="Задай вопрос..." 
+      rows="1"
+      onkeydown="handleAiInputKey(event)"
+      oninput="autoResizeAiInput(this)"
+    ></textarea>
+    <button class="ai-chat-send" id="aiChatSend" onclick="sendAiMessage()">➤</button>
   </div>
 </div>
 <!-- ЛАЙТБОКС ДЛЯ ПРОСМОТРА СТАВОК -->
@@ -2030,6 +2389,159 @@ function toggleTheme(){
 }
 // При загрузке восстанавливаем сохранённую тему
 applyTheme(localStorage.getItem('kp_theme') || 'dark');
+  // ==========================================
+// AI ЧАТ-АССИСТЕНТ
+// ==========================================
+const AI_WORKER_URL = 'https://dealdesk-ai.mlshvi.workers.dev';
+let aiChatHistory = [];
+let aiIsLoading = false;
+
+function toggleAiChat() {
+  const win = $('aiChatWindow');
+  const btn = $('aiChatButton');
+  if (!win || !btn) return;
+  
+  if (win.classList.contains('active')) {
+    win.classList.remove('active');
+  } else {
+    win.classList.add('active');
+    btn.classList.remove('has-notification');
+    setTimeout(() => {
+      const input = $('aiChatInput');
+      if (input) input.focus();
+    }, 300);
+  }
+}
+
+function autoResizeAiInput(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function handleAiInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendAiMessage();
+  }
+}
+
+function askAiQuick(text) {
+  const input = $('aiChatInput');
+  if (input) {
+    input.value = text;
+    sendAiMessage();
+  }
+}
+
+function getCarContext() {
+  const car = val('vCarName');
+  const pkg = val('vCarPkg');
+  const specs = val('vCarSpecs');
+  const priceNew = val('vPriceNew');
+  
+  if (!car) return '';
+  
+  let ctx = `\n\n[КОНТЕКСТ: Менеджер сейчас работает с КП на автомобиль "${car}`;
+  if (pkg) ctx += ` ${pkg}`;
+  ctx += `"`;
+  if (priceNew) ctx += `, цена ${priceNew} ₽`;
+  if (specs) ctx += `. Характеристики: ${specs.substring(0, 200)}`;
+  ctx += `]`;
+  return ctx;
+}
+
+function addAiMessage(text, type) {
+  const messages = $('aiChatMessages');
+  if (!messages) return;
+  const div = document.createElement('div');
+  div.className = `ai-msg ${type}`;
+  div.innerHTML = text.replace(/\n/g, '<br>');
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function showAiTyping() {
+  const messages = $('aiChatMessages');
+  if (!messages) return null;
+  const div = document.createElement('div');
+  div.className = 'ai-typing';
+  div.id = 'aiTypingIndicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function hideAiTyping() {
+  const t = $('aiTypingIndicator');
+  if (t) t.remove();
+}
+
+async function sendAiMessage() {
+  if (aiIsLoading) return;
+  
+  const input = $('aiChatInput');
+  const sendBtn = $('aiChatSend');
+  if (!input) return;
+  
+  const text = input.value.trim();
+  if (!text) return;
+  
+  // Добавляем сообщение пользователя
+  addAiMessage(text, 'user');
+  input.value = '';
+  autoResizeAiInput(input);
+  
+  // Скрываем подсказки после первого сообщения
+  const suggestions = $('aiSuggestions');
+  if (suggestions) suggestions.style.display = 'none';
+  
+  // Показываем индикатор
+  aiIsLoading = true;
+  if (sendBtn) sendBtn.disabled = true;
+  showAiTyping();
+  
+  // Готовим сообщения для API
+  const userMessageWithContext = text + getCarContext();
+  aiChatHistory.push({ role: 'user', content: userMessageWithContext });
+  
+  // Ограничиваем историю последними 10 сообщениями
+  const messagesToSend = aiChatHistory.slice(-10);
+  
+  try {
+    const response = await fetch(AI_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messagesToSend })
+    });
+    
+    hideAiTyping();
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Сервер ответил ${response.status}: ${errorText.substring(0, 100)}`);
+    }
+    
+    const data = await response.json();
+    const reply = data.reply || data.message || data.choices?.[0]?.message?.content;
+    
+    if (!reply) throw new Error('Пустой ответ от AI');
+    
+    aiChatHistory.push({ role: 'assistant', content: reply });
+    addAiMessage(reply, 'bot');
+    
+  } catch (err) {
+    hideAiTyping();
+    console.error('AI Chat error:', err);
+    addAiMessage(`⚠️ Не удалось получить ответ.<br><small>${err.message}</small>`, 'bot error');
+  } finally {
+    aiIsLoading = false;
+    if (sendBtn) sendBtn.disabled = false;
+    if (input) input.focus();
+  }
+}
 // Запускаем фоновую загрузку цен
 loadCatalogFromGoogle();
 </script>

@@ -945,6 +945,14 @@ body.light-theme .ai-chat-input-wrap{
   justify-content:center;
 }
 .lightbox-close:hover{ background:rgba(255,255,255,.2); }
+  .credit-row-info{ font-size:12px; margin-bottom:4px; color:rgba(255,255,255,.5); }
+.credit-val-white{ color:#fff; font-weight:700; }
+.credit-val-red{ color:#ff6b6b; font-weight:700; }
+.credit-extras-title{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; color:rgba(255,255,255,.5); }
+body.light-theme .credit-row-info{ color:#374151 !important; }
+body.light-theme .credit-val-white{ color:#1f2330 !important; }
+body.light-theme .credit-val-red{ color:#dc2626 !important; }
+body.light-theme .credit-extras-title{ color:#15803d !important; }
   body.light-theme #outCreditBody{ color:#1f2330 !important; }
 body.light-theme #outCreditOverpay{ color:#dc2626 !important; }
 body.light-theme #creditCalcContent .margin-result > div{ color:#374151 !important; }
@@ -1140,7 +1148,7 @@ body.light-theme #creditCalcContent div[style*="background:rgba(48,209,88"] > di
     </div>
 
     <div style="background:rgba(48,209,88,.06); border:1px solid rgba(48,209,88,.15); border-radius:12px; padding:12px; margin:8px 0 12px;">
-      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; color:rgba(255,255,255,.5);">Включить в сумму кредита:</div>
+      <div class="credit-extras-title">Включить в сумму кредита:</div>
       <div class="row">
         <div>
           <span class="hint" style="margin-bottom:2px;">КАСКО (₽):</span>
@@ -1157,11 +1165,11 @@ body.light-theme #creditCalcContent div[style*="background:rgba(48,209,88"] > di
     </div>
 
     <div class="margin-result" style="border-top-color: rgba(48,209,88,.2);">
-      <div style="font-size:12px; color:rgba(255,255,255,.5)!important; margin-bottom:4px;">
-        Сумма кредита: <span id="outCreditBody" style="color:#fff!important; font-weight:700;">0 ₽</span>
+            <div class="credit-row-info">
+        Сумма кредита: <span id="outCreditBody" class="credit-val-white">0 ₽</span>
       </div>
-      <div style="font-size:12px; color:rgba(255,255,255,.5)!important; margin-bottom:4px;">
-        Переплата: <span id="outCreditOverpay" style="color:#ff6b6b!important; font-weight:700;">0 ₽</span>
+      <div class="credit-row-info">
+        Переплата: <span id="outCreditOverpay" class="credit-val-red">0 ₽</span>
       </div>
       <div style="margin-bottom: 10px;">Платеж: <span id="outCreditPayment">0 ₽</span></div>
       <button class="btn-sec" onclick="openScheduleModal()" style="margin-bottom:8px;">📊 График платежей</button>
